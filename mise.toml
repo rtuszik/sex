@@ -1,0 +1,52 @@
+[tools]
+cocogitto = "latest"
+go = "latest"
+golangci-lint = "latest"
+goreleaser = "latest"
+lua = "latest"
+opengrep = "latest"
+rumdl = "latest"
+stylua = "latest"
+yamlfmt = "latest"
+zizmor = "latest"
+
+[settings]
+lockfile = false
+
+[env]
+SEX_VERSION = "{{exec(command='git describe --tags --always --dirty 2>/dev/null || echo dev')}}"
+
+[tasks.build]
+description = "Build bin/sex"
+run = 'go build -ldflags "-X main.version=$SEX_VERSION" -o bin/sex ./cmd/sex'
+
+[tasks.install]
+description = "Install sex to GOBIN"
+run = 'go install -ldflags "-X main.version=$SEX_VERSION" ./cmd/sex'
+
+[tasks.test]
+description = "Run tests with coverage"
+run = [
+  "go test -race -coverprofile=coverage.out ./...",
+  "go tool cover -func=coverage.out | tail -1",
+]
+
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run ./..."
+
+[tasks.zizmor]
+description = "Audit GitHub workflows"
+run = "zizmor ."
+
+[tasks.opengrep]
+description = "Scan code with opengrep"
+run = "opengrep scan --error ."
+
+[tasks.scan]
+description = "Run security scanners"
+depends = ["zizmor", "opengrep"]
+
+[tasks.check]
+description = "Lint, test, and scan"
+depends = ["lint", "test", "scan"]
