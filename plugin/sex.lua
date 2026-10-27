@@ -31,27 +31,15 @@ local function trim(s)
   return (s:gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
--- Rex clips a layer at its width and height measured from the window origin, not from the
--- layer's corner. Grow the layer by its offset and keep fzf out of the clipped margin.
-local function layer_geometry(opts)
-  local x, y, w, h = opts.bounds[1], opts.bounds[2], opts.bounds[3], opts.bounds[4]
-  if not opts.clip_fix or (x == 0 and y == 0) then return { x, y, w, h }, nil end
-  local lw, lh = math.min(x + w, 1 - x), math.min(y + h, 1 - y)
-  local margin = string.format("--margin=0,%d%%,%d%%,0", math.ceil(x / lw * 100), math.ceil(y / lh * 100))
-  return { x, y, lw, lh }, margin
-end
-
-local function picker_layout(opts, ctx, margin)
+local function picker_layout(opts, ctx)
   local argv = { opts.bin, "pick" }
   if ctx.client_id ~= nil then
     argv[#argv + 1] = "--client"
     argv[#argv + 1] = ctx.client_id
   end
-  local fzf_args = opts.fzf_args or {}
-  if margin ~= nil or #fzf_args > 0 then
+  if opts.fzf_args ~= nil and #opts.fzf_args > 0 then
     argv[#argv + 1] = "--"
-    if margin ~= nil then argv[#argv + 1] = margin end
-    for _, a in ipairs(fzf_args) do argv[#argv + 1] = a end
+    for _, a in ipairs(opts.fzf_args) do argv[#argv + 1] = a end
   end
   return rex.layout.block{
     flavor = "com.superlogical.terminal.shell",
@@ -60,11 +48,10 @@ local function picker_layout(opts, ctx, margin)
 end
 
 local function open_picker(opts, ctx)
+  local layout = picker_layout(opts, ctx)
   if opts.host == "layer" then
-    local bounds, margin = layer_geometry(opts)
-    return rex.session.new_layer{ bounds = bounds, focus = true, layout = picker_layout(opts, ctx, margin) }
+    return rex.session.new_layer{ bounds = opts.bounds, focus = true, layout = layout }
   end
-  local layout = picker_layout(opts, ctx, nil)
   if opts.host == "split" and ctx.block_id ~= nil then
     return rex.session.new_split{
       anchor_id = ctx.block_id,
@@ -78,7 +65,7 @@ local function open_picker(opts, ctx)
 end
 
 -- opts.bin: path to sex. opts.host: "layer" (default, a floating popup), "split", or "tab".
--- opts.bounds: popup { x, y, w, h } as window fractions. opts.clip_fix: work around Rex's layer clipping (default true).
+-- opts.bounds: popup { x, y, w, h } as window fractions.
 -- opts.direction: "horizontal" or "vertical" for splits. opts.fzf_args: extra fzf options.
 function M.setup(opts)
   opts = opts or {}
@@ -86,7 +73,6 @@ function M.setup(opts)
   opts.host = opts.host or "layer"
   opts.direction = opts.direction or "horizontal"
   opts.bounds = opts.bounds or { 0.1, 0.1, 0.8, 0.8 }
-  if opts.clip_fix == nil then opts.clip_fix = true end
   local path = table.concat(extra_path, ":") .. ":" .. (os.getenv("PATH") or "/usr/bin:/bin")
 
   rex.action{
