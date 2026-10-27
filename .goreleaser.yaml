@@ -22,9 +22,4 @@ checksum:
     name_template: checksums.txt
 
 changelog:
-    use: github
-    filters:
-        exclude:
-            - "^chore"
-            - "^docs"
-            - "^test"
+    disable: true

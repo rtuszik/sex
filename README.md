@@ -60,19 +60,13 @@ Both actions also appear in the command palette.
 | `bin` | first `sex` found in Homebrew, `~/go/bin`, `~/.local/bin`, or the mise shims | Path to `sex`. Rex runs commands without your shell's PATH additions, so set it when sex is installed elsewhere. |
 | `host` | `"layer"` | Where the picker opens: `"layer"` (floating popup), `"split"`, or `"tab"` |
 | `bounds` | `{ 0.1, 0.1, 0.8, 0.8 }` | Popup `{ x, y, w, h }` as fractions of the window |
-| `clip_fix` | `true` | Work around Rex's layer clipping, see below |
 | `direction` | `"horizontal"` | Split direction for `host = "split"` |
 | `fzf_args` | `{}` | Extra fzf options |
 
-Current Rex builds have two bugs in floating layers, and sex works around both:
-
-- Rex clips a layer at its width and height measured from the window's corner,
-  not from the layer's corner. sex makes the layer larger by its offset and
-  gives fzf a right and bottom margin of the clipped size, so the visible popup
-  matches `bounds`. Set `clip_fix = false` when Rex fixes the bug.
-- A layer's default background is transparent, so `sex pick` asks the terminal
-  for its background color and paints fzf with it. Pass your own
-  `--color bg:...` in `fzf_args` to override it.
+Floating layers need Rex build 1531 or later; older builds clip them. Inside
+Rex, `sex pick` asks the terminal for its background color and paints fzf with
+it, so the popup stays opaque. Pass your own `--color bg:...` in `fzf_args` to
+override it.
 
 ## Usage
 
