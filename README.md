@@ -1,144 +1,181 @@
 # sex
 
-A session manager for [Rex](https://www.superlogical.com/rex/), built on
-[sesh](https://github.com/joshmedeski/sesh) and [zoxide](https://github.com/ajeetdsouza/zoxide).
+sex is a session manager for the Rex terminal multiplexer. It lists running
+Rex sessions together with the sessions defined in sesh.toml and the
+directories known to zoxide, creates a session when the selected one does
+not exist, and switches the Rex app to it. It is written in Go.
 
-sex lists your running Rex sessions together with the sessions in your
-`sesh.toml` and your zoxide directories. Pick one with fzf, and sex switches
-the Rex app to it. If the session does not exist, sex creates it first, with the
-startup command and windows from your sesh config.
-
-sesh stays the source of truth: sex reads `sesh list --json` for config and
-zoxide entries, so your existing `sesh.toml` works unchanged.
-
-> Rex is in beta and its API still changes. sex is tested against Rex
-> 0.0.1792787366 and sesh 2.33.
+sex does not read sesh configuration on its own. It takes config and zoxide
+entries from `sesh list --json`, so an existing sesh.toml works unchanged.
 
 ## Requirements
 
-- Rex (macOS app or Linux server)
-- [sesh](https://github.com/joshmedeski/sesh), [zoxide](https://github.com/ajeetdsouza/zoxide), [fzf](https://github.com/junegunn/fzf), git
-- **Remote Control** turned on in Rex Settings > Rex Server, so the CLI can switch
-  the app to another session. Key bindings from the Rex plugin can switch
-  without it, except for the picker.
+- Rex. Floating pickers need app build 1531 or later.
+- sesh 2.33 or later, zoxide, fzf, and git.
+- Go 1.26 or later, to build from source.
 
-Run `sex doctor` to check all of these.
+The Rex app must have Remote Control enabled (Settings, Rex Server) for the
+command line to switch sessions. Run `sex doctor` to check the setup.
 
-## Install
+## Installation
+
+Release binaries for macOS and Linux are published on GitHub. With mise:
+
+```sh
+mise use -g github:rtuszik/sex
+```
+
+From source:
 
 ```sh
 go install github.com/rtuszik/sex/cmd/sex@latest
 ```
 
-Or download a binary from the releases page.
+## Rex plugin
 
-## Set up Rex
-
-Save the plugin next to your Rex config and load it:
+The plugin adds two actions to Rex: `sex_pick` opens the picker in a floating
+layer, and `sex_last` switches to the previously shown session. Install it
+next to the Rex configuration file:
 
 ```sh
 sex plugin > ~/.config/rex/sex.lua
 ```
 
+Load it from `~/.config/rex/init.lua` and bind the actions:
+
 ```lua
--- ~/.config/rex/init.lua
 require("sex").setup()
-rex.bind("ctrl+b>shift+t", "sex_pick") -- fzf picker
-rex.bind("ctrl+b>shift+l", "sex_last") -- previous session
+rex.bind("ctrl+b>shift+t", "sex_pick")
+rex.bind("ctrl+b>shift+l", "sex_last")
 ```
 
-```sh
-rex config reload
+Then run `rex config reload`. `setup` accepts a table with these fields:
+
+```text
+bin        Path to sex. Default: the first sex found in /opt/homebrew/bin,
+           /usr/local/bin, ~/go/bin, ~/.local/bin, or the mise shims.
+           Rex does not run commands with the PATH of an interactive shell.
+host       "layer" (default), "split", or "tab".
+bounds     Layer position { x, y, w, h } as fractions of the window.
+           Default: { 0.1, 0.1, 0.8, 0.8 }.
+direction  "horizontal" (default) or "vertical", for host = "split".
+fzf_args   Extra fzf options, appended after the defaults.
 ```
 
-Both actions also appear in the command palette.
-
-`setup` takes these options:
-
-| Option | Default | Description |
-| --- | --- | --- |
-| `bin` | first `sex` found in Homebrew, `~/go/bin`, `~/.local/bin`, or the mise shims | Path to `sex`. Rex runs commands without your shell's PATH additions, so set it when sex is installed elsewhere. |
-| `host` | `"layer"` | Where the picker opens: `"layer"` (floating popup), `"split"`, or `"tab"` |
-| `bounds` | `{ 0.1, 0.1, 0.8, 0.8 }` | Popup `{ x, y, w, h }` as fractions of the window |
-| `direction` | `"horizontal"` | Split direction for `host = "split"` |
-| `fzf_args` | `{}` | Extra fzf options |
-
-Floating layers need Rex build 1531 or later; older builds clip them. Inside
-Rex, `sex pick` asks the terminal for its background color and paints fzf with
-it, so the popup stays opaque. Pass your own `--color bg:...` in `fzf_args` to
-override it.
+`sex_last` switches through the app and works without Remote Control.
+`sex_pick` does not.
 
 ## Usage
 
-| Command | Description |
-| --- | --- |
-| `sex list` | List sessions. Filter with `-r` (Rex), `-c` (config), `-z` (zoxide). Add `-i` for icons, `-H` to hide the current session, `-j` for JSON. |
-| `sex connect NAME` | Switch to a session, creating it when needed. `-b` creates without switching. `-c CMD` replaces the startup command. |
-| `sex pick` | Open fzf with the list, preview, and key bindings, then connect. Options after `--` go to fzf. |
-| `sex last` | Switch to the session you were in before. `--print` prints its ID instead. |
-| `sex preview NAME` | Print a session's screen, or run the preview command for a directory. |
-| `sex kill NAME` | Kill a running Rex session. |
-| `sex root` | Print the git root name of the current session. |
-| `sex doctor` | Check Rex, Remote Control, sesh, zoxide, and fzf. |
-| `sex plugin` | Print the Rex Lua plugin. |
+```text
+sex list [-r] [-c] [-z] [-i] [-H] [-j]
+    List Rex sessions (-r), sesh config sessions (-c), and zoxide
+    directories (-z); all three by default. -i adds source icons, -H hides
+    the session on screen, -j prints JSON.
 
-`--client` selects the Rex app to switch when more than one is connected. It
-defaults to `$REX_CLIENT`, then to the only connected app.
+sex connect [-b] [-c command] name
+    Switch to the session called name. If it does not exist, create it
+    from the matching config entry, zoxide entry, or directory. -b creates
+    the session without switching. -c replaces the startup command.
 
-### Picker keys
+sex pick [-- fzf options]
+    Select a session with fzf and connect to it.
 
-| Key | Action |
-| --- | --- |
-| `ctrl-a` | All sources |
-| `ctrl-t` | Rex sessions |
-| `ctrl-g` | sesh config sessions |
-| `ctrl-x` | zoxide directories |
-| `ctrl-d` | Kill the selected Rex session |
-| `ctrl-/` | Show or hide the preview (hidden at start) |
-| `tab` / `shift-tab` | Down / up |
+sex last [-p]
+    Switch to the session shown before the current one. -p prints its ID.
 
-### Your own fzf command
+sex preview name     Print a session's screen or a directory preview.
+sex kill name        Destroy a running Rex session.
+sex root             Print the git root name of the current session.
+sex doctor           Check Rex, Remote Control, sesh, zoxide, and fzf.
+sex plugin           Print the Rex plugin.
+```
+
+The global option `--client` selects the Rex app to switch when more than
+one is connected. It defaults to `$REX_CLIENT`, then to the only app.
+
+In the picker, ctrl-a, ctrl-t, ctrl-g, and ctrl-x show all sources, Rex
+sessions, config sessions, and zoxide directories. ctrl-d destroys the
+selected Rex session. ctrl-/ toggles the preview.
+
+To use a different fzf command:
 
 ```sh
-sex connect "$(sex list --icons | fzf --ansi --preview 'sex preview {}')"
+sex connect "$(sex list | fzf --preview 'sex preview {}')"
 ```
 
-### zsh widget
+## Notes
 
-```zsh
-function sex-sessions() {
-  sex pick -- --height 40% --reverse
-  zle reset-prompt
-}
-zle -N sex-sessions
-bindkey '\es' sex-sessions
+Config sessions are hidden while a Rex session with the same name runs.
+zoxide directories are hidden while a Rex session runs in them.
+
+Directories are named as sesh names them. Characters that tmux rejects, such
+as `.` and `:`, are kept.
+
+The `windows` of a config session become Rex tabs. The first tab runs the
+startup command and keeps focus.
+
+Rex does not record a session's directory. sex stores it in
+`$XDG_STATE_HOME/sex/state.json` and falls back to the working directory of
+the visible terminal for sessions it did not create.
+
+`sex last` orders sessions by the time the app last sized their visible
+terminal. This includes switches made from the Rex sidebar. The field is not
+a documented Rex interface.
+
+Inside Rex, `sex pick` reads the terminal background color (OSC 11) and
+passes it to fzf.
+
+## sesh compatibility
+
+sex reads config and zoxide entries through `sesh list --json`, so sesh
+resolves these sesh.toml keys before sex sees them: `[[session]]` (name,
+path, startup_command, preview_command, windows, disable_startup_command,
+alias, icon), `[[window]]`, `[[wildcard]]`, `[default_session]`, `import`,
+`blacklist`, and `sort_order`. sex reads `dir_length`, `git_dir_length`,
+`git_namer_use_worktree_root`, and `name_substitution` itself, from the main
+sesh.toml only, as sesh does.
+
+These keys behave differently:
+
+```text
+cache        sex list, sex pick, and sex preview use the sesh cache when
+             cache = true. sex connect always reads live data.
+blacklist    Also applied to Rex sessions.
+sort_order   Applies to config and zoxide entries. Rex sessions are always
+             listed first; the position of "tmux" is ignored.
+[frecency]   Used by sesh for the zoxide list. sex runs zoxide add and
+             zoxide query directly, so other backends are not used when
+             connecting.
+alias        Resolved by sex connect. alias_auto_connect and the [tui]
+             alias options belong to the sesh picker and have no effect.
+[icons]      Not used. sex shows its own source icons, or the icon of the
+             session or wildcard.
 ```
 
-## How it works
+These keys have no effect: `tmux_command`, `terminal`, `[tui]`, `[browser]`,
+`[[worktree]]`, and the tmuxinator and tmuxp fields of `[[session]]`.
 
-- **Sources.** Rex sessions come from the Rex server. Config sessions and zoxide
-  directories come from `sesh list -c -z --json`, with sesh's wildcards, aliases,
-  and `default_session` already applied.
-- **Duplicates.** A config session is hidden while a Rex session with the same
-  name runs. A zoxide directory is hidden while a Rex session runs in it.
-- **Names.** Directories are named the way sesh names them: git repository,
-  `dir_length`, `git_dir_length`, and `name_substitution` from `sesh.toml`.
-  Rex labels allow `.` and `:`, so sex keeps them.
-- **Windows.** `windows` from your sesh config become Rex tabs. The first tab
-  runs the startup command and stays focused.
-- **Paths.** Rex does not store a session's directory, so sex records it in
-  `$XDG_STATE_HOME/sex/state.json`. For sessions sex did not create, it uses the
-  working directory of the visible terminal.
-- **Last session.** Rex records when the app last sized each terminal. sex uses
-  that time to order sessions by when you last looked at them, including
-  sidebar clicks. This is not a documented Rex API, so treat it as best effort.
+The sesh commands window, worktree, clone, mkdir, and rename have no sex
+equivalent. `sex pick` uses fzf instead of the sesh picker.
 
-## Differences from sesh
+## Building
 
-- tmuxinator, tmuxp, `sesh window`, and `sesh worktree` are not supported.
-- `[tui]`, `cache`, and `tmux_command` have no effect.
+```sh
+mise run build
+mise run check
+```
+
+`check` runs golangci-lint, the tests, zizmor, and opengrep. Release history
+is in CHANGELOG.md.
+
+## Reporting bugs
+
+Open an issue at <https://github.com/rtuszik/sex/issues>. Include the output
+of `sex doctor` and `rex version`.
 
 ## License
 
-MIT. `internal/namer` is derived from sesh, see
-[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+sex is distributed under the MIT License. See LICENSE. The package
+`internal/namer` is derived from sesh; its license is in
+THIRD_PARTY_LICENSES.md.
