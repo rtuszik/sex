@@ -257,6 +257,7 @@ func TestCheckPlugin(t *testing.T) {
 		want string
 	}{
 		{fakePlugin{err: errors.New("no action")}, "/bin/sex", "warn  rex plugin: not loaded"},
+		{fakePlugin{info: rex.PluginInfo{Error: "sex: /old/sex plugin --source failed"}}, "/bin/sex", "FAIL  rex plugin: sex: /old/sex plugin --source failed"},
 		{fakePlugin{info: rex.PluginInfo{Version: "v0.1.0", Bin: "/bin/sex"}}, "/bin/sex", "warn  rex plugin: loaded version v0.1.0, this sex is v0.2.0"},
 		{fakePlugin{info: rex.PluginInfo{Version: "v0.2.0", Bin: "/old/sex"}}, "/bin/sex", "warn  rex plugin: runs /old/sex, but this sex is /bin/sex"},
 		{fakePlugin{info: rex.PluginInfo{Version: "v0.2.0", Bin: "/bin/sex"}}, "/bin/sex", "ok    rex plugin: v0.2.0 (/bin/sex)"},

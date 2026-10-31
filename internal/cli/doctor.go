@@ -126,6 +126,8 @@ func checkPlugin(ctx context.Context, c *checker, r pluginReader, version, exe s
 	switch {
 	case err != nil:
 		c.warn("rex plugin: not loaded; save the output of `sex plugin` where require finds it")
+	case info.Error != "":
+		c.fail("rex plugin: %s", info.Error)
 	case info.Version != version:
 		c.warn("rex plugin: loaded version %s, this sex is %s; run rex config reload", info.Version, version)
 	case exe != "" && info.Bin != exe:

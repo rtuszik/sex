@@ -4,7 +4,6 @@
 local home = os.getenv("HOME") or ""
 local user = os.getenv("USER") or ""
 local candidates = {
-  os.getenv("SEX_BIN"),
   "/opt/homebrew/bin/sex",
   "/usr/local/bin/sex",
   home .. "/go/bin/sex",
@@ -24,29 +23,38 @@ local function exists(path)
   return true
 end
 
+-- SEX_BIN stays out of the list: an unset variable would be nil and end ipairs early.
 local function find()
+  local env = os.getenv("SEX_BIN")
+  if env ~= nil and env ~= "" then return env end
   for _, p in ipairs(candidates) do
-    if p ~= nil and p ~= "" and exists(p) then return p end
+    if exists(p) then return p end
   end
   return "sex"
 end
 
 local M = {}
 
+-- rex.log does not show up in `rex config reload`, so a failed load keeps the actions
+-- and reports the reason when one runs, and to `sex doctor` through sex_version.
+local function broken(reason)
+  local msg = "sex: " .. reason
+  rex.log("warn", msg)
+  for _, name in ipairs({ "sex_pick", "sex_activity", "sex_last" }) do
+    rex.action{ name = name, title = name, run = function() error(msg, 0) end }
+  end
+  rex.action{ name = "sex_version", title = "sex_version", run = function() return { error = msg } end }
+end
+
 -- opts.bin overrides the search. All other options go to the plugin.
 function M.setup(opts)
   opts = opts or {}
   local found = opts.bin or find()
   local r, err = rex.exec({ found, "plugin", "--source" }, { timeout = 10 })
-  if r == nil or not r.ok then
-    rex.log("warn", "sex: could not load the plugin from " .. found .. ": " .. tostring(err or r.stderr))
-    return
-  end
+  if r == nil then return broken(found .. ": " .. tostring(err)) end
+  if not r.ok then return broken(found .. " plugin --source failed, it may predate the loader: " .. r.stderr) end
   local chunk, lerr = loadstring(r.stdout, "=sex plugin")
-  if chunk == nil then
-    rex.log("warn", "sex: " .. lerr)
-    return
-  end
+  if chunk == nil then return broken(lerr) end
   opts.fallback_bin = found
   chunk().setup(opts)
 end

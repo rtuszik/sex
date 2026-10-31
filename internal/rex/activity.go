@@ -61,6 +61,7 @@ func (c *Client) FocusBlock(ctx context.Context, sessionID, blockID string) erro
 type PluginInfo struct {
 	Version string `json:"version"`
 	Bin     string `json:"bin"`
+	Error   string `json:"error"`
 }
 
 // PluginInfo asks the loaded Rex plugin for its version and the sex binary it runs.
