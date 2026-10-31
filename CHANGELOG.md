@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [v0.4.2](https://github.com/rtuszik/sex/compare/aea7459c91b94310e613a847418e9d3340051215..v0.4.2) - 2026-10-31
+#### Bug Fixes
+- (**pick**) drop fzf frames inside the Rex pane and label picker panes - ([aea7459](https://github.com/rtuszik/sex/commit/aea7459c91b94310e613a847418e9d3340051215)) - Robin Tuszik
+
+- - -
+
 ## [v0.4.1](https://github.com/rtuszik/sex/compare/819642da363ce5bc954501b915cd3d3298d86e04..v0.4.1) - 2026-10-31
 #### Bug Fixes
 - (**plugin**) search for sex when SEX_BIN is unset and report load failures - ([819642d](https://github.com/rtuszik/sex/commit/819642da363ce5bc954501b915cd3d3298d86e04)) - Robin Tuszik
