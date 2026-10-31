@@ -663,3 +663,30 @@ func TestConnectBackgroundWithoutServer(t *testing.T) {
 		t.Fatal("a switching connect needs a running server")
 	}
 }
+
+func TestStreamEmitsRexSessionsFirst(t *testing.T) {
+	f := newFixture(t)
+	var batches [][]string
+	err := f.app.Stream(context.Background(), ListOptions{}, func(batch []Item) error {
+		batches = append(batches, names(batch))
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertEqual(t, len(batches), 2)
+	assertSlice(t, batches[0], []string{"rex:web", "rex:api", "rex:notes"})
+	assertSlice(t, batches[1], []string{"config:dotfiles", "zoxide:~/src/cli"})
+
+	stop := errors.New("reader gone")
+	err = f.app.Stream(context.Background(), ListOptions{}, func([]Item) error { return stop })
+	if !errors.Is(err, stop) {
+		t.Fatalf("err = %v, want the emit error", err)
+	}
+
+	f.rex.Snaps = nil
+	calls := 0
+	if err := f.app.Stream(context.Background(), ListOptions{Rex: true}, func([]Item) error { calls++; return nil }); err != nil || calls != 0 {
+		t.Fatalf("empty source must not emit: calls %d, err %v", calls, err)
+	}
+}

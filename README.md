@@ -54,7 +54,9 @@ Then run `rex config reload`. `setup` accepts a table with these fields:
 ```text
 bin        Path to sex. Default: the first sex found in /opt/homebrew/bin,
            /usr/local/bin, ~/go/bin, ~/.local/bin, or the mise shims.
-           Rex does not run commands with the PATH of an interactive shell.
+           A mise shim is resolved to the installed binary at load; run
+           rex config reload after upgrading sex with mise. Rex does not run
+           commands with the PATH of an interactive shell.
 host       "layer" (default), "split", or "tab".
 bounds     Layer position { x, y, w, h } as fractions of the window.
            Default: { 0.1, 0.1, 0.8, 0.8 }.

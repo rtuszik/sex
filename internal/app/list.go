@@ -19,6 +19,16 @@ type ListOptions struct {
 }
 
 func (a *App) List(ctx context.Context, opts ListOptions) ([]Item, error) {
+	var items []Item
+	err := a.Stream(ctx, opts, func(batch []Item) error {
+		items = append(items, batch...)
+		return nil
+	})
+	return items, err
+}
+
+// Stream emits Rex sessions as soon as they are read, then the config and zoxide rows.
+func (a *App) Stream(ctx context.Context, opts ListOptions, emit func([]Item) error) error {
 	all := !opts.Rex && !opts.Config && !opts.Zoxide
 	wantRex, wantConfig, wantZoxide := all || opts.Rex, all || opts.Config, all || opts.Zoxide
 
@@ -34,27 +44,19 @@ func (a *App) List(ctx context.Context, opts ListOptions) ([]Item, error) {
 
 	clientID, err := a.ResolveClient(ctx, opts.Client)
 	if err != nil && opts.Client != "" {
-		return nil, err
+		return err
 	}
 	// Rex sessions are always read so config and zoxide rows can be deduplicated against them.
 	rexItems, err := a.sessions(ctx, clientID)
 	if err != nil {
 		if wantRex && !wantConfig && !wantZoxide {
-			return nil, err
+			return err
 		}
 		a.warnf("listing Rex sessions: %v", err)
 	}
-	res := <-seshDone
-	entries, err := res.entries, res.err
-	if err != nil {
-		if !wantRex {
-			return nil, err
-		}
-		a.warnf("%v", err)
-	}
 
 	blacklist := compileBlacklist(a.Config.Blacklist)
-	var items []Item
+	var shown []Item
 	names := map[string]bool{}
 	var paths []string
 	for _, it := range rexItems {
@@ -63,19 +65,36 @@ func (a *App) List(ctx context.Context, opts ListOptions) ([]Item, error) {
 		if !wantRex || (opts.HideCurrent && it.Current) || isBlacklisted(blacklist, it.Name) {
 			continue
 		}
-		items = append(items, it)
+		shown = append(shown, it)
 	}
-	for i := range entries {
-		e := &entries[i]
+	if len(shown) > 0 {
+		if err := emit(shown); err != nil {
+			return err
+		}
+	}
+
+	res := <-seshDone
+	if res.err != nil {
+		if !wantRex {
+			return res.err
+		}
+		a.warnf("%v", res.err)
+	}
+	var rest []Item
+	for i := range res.entries {
+		e := &res.entries[i]
 		if e.Src == SourceConfig && names[strings.ToLower(e.Name)] {
 			continue
 		}
 		if e.Src == SourceZoxide && containsPath(paths, e.Path) {
 			continue
 		}
-		items = append(items, Item{Source: e.Src, Name: e.Name, Path: e.Path, Score: e.Score, Icon: e.Icon, entry: e})
+		rest = append(rest, Item{Source: e.Src, Name: e.Name, Path: e.Path, Score: e.Score, Icon: e.Icon, entry: e})
 	}
-	return items, nil
+	if len(rest) > 0 {
+		return emit(rest)
+	}
+	return nil
 }
 
 func containsPath(paths []string, p string) bool {

@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -26,23 +27,34 @@ func newPickCmd(g *globals) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			items, err := a.List(cmd.Context(), app.ListOptions{Client: g.client})
-			if err != nil {
-				return err
-			}
-			var rows strings.Builder
-			for _, it := range items {
-				rows.WriteString(app.Format(it, true, true) + "\n")
-			}
+			// fzf starts at once; rows stream in while Rex and sesh are still answering.
+			pr, pw := io.Pipe()
+			listErr := make(chan error, 1)
+			go func() {
+				err := a.Stream(cmd.Context(), app.ListOptions{Client: g.client}, func(batch []app.Item) error {
+					var rows strings.Builder
+					for _, it := range batch {
+						rows.WriteString(app.Format(it, true, true) + "\n")
+					}
+					_, err := io.WriteString(pw, rows.String())
+					return err
+				})
+				_ = pw.CloseWithError(err)
+				listErr <- err
+			}()
 			// Rex floating layers draw the default background as transparent; paint it explicitly.
 			bg := ""
 			if os.Getenv("REX_BLOCK") != "" {
 				bg, _ = termbg.Query()
 			}
 			fzf := exec.CommandContext(cmd.Context(), "fzf", fzfArgs(self, g.client, bg, args)...)
-			fzf.Stdin = strings.NewReader(rows.String())
+			fzf.Stdin = pr
 			fzf.Stderr = os.Stderr
 			out, err := fzf.Output()
+			_ = pr.Close()
+			if lerr := <-listErr; lerr != nil && !errors.Is(lerr, io.ErrClosedPipe) {
+				return lerr
+			}
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) && (exitErr.ExitCode() == 1 || exitErr.ExitCode() == 130) {
 				return nil

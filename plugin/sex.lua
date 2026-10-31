@@ -31,6 +31,19 @@ local function trim(s)
   return (s:gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
+-- A mise shim starts mise on every call; resolve the real binary once, at load.
+local function resolve_shim(bin)
+  if not bin:find("/mise/shims/", 1, true) then return bin end
+  for _, dir in ipairs(extra_path) do
+    if exists(dir .. "/mise") then
+      local r = rex.exec({ dir .. "/mise", "which", "sex" }, { timeout = 5 })
+      if r ~= nil and r.ok and exists(trim(r.stdout)) then return trim(r.stdout) end
+      return bin
+    end
+  end
+  return bin
+end
+
 local function picker_layout(opts, ctx)
   local argv = { opts.bin, "pick" }
   if ctx.client_id ~= nil then
@@ -69,7 +82,7 @@ end
 -- opts.direction: "horizontal" or "vertical" for splits. opts.fzf_args: extra fzf options.
 function M.setup(opts)
   opts = opts or {}
-  opts.bin = opts.bin or find_bin()
+  opts.bin = opts.bin or resolve_shim(find_bin())
   opts.host = opts.host or "layer"
   opts.direction = opts.direction or "horizontal"
   opts.bounds = opts.bounds or { 0.1, 0.1, 0.8, 0.8 }
