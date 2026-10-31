@@ -275,3 +275,51 @@ func TestIsUnreachable(t *testing.T) {
 		t.Fatal("only exit status 4 is unreachable")
 	}
 }
+
+func TestPluginInfo(t *testing.T) {
+	c, f := newClient(`{"bin":"/bin/sex","version":"v0.2.0"}`)
+	info, err := c.PluginInfo(context.Background())
+	if err != nil || info.Version != "v0.2.0" || info.Bin != "/bin/sex" {
+		t.Fatalf("info %+v, err %v", info, err)
+	}
+	if strings.Join(f.calls[0].args, " ") != "--autostart=false do sex_version" {
+		t.Fatalf("args %v", f.calls[0].args)
+	}
+	c, _ = newClient("nope")
+	if _, err := c.PluginInfo(context.Background()); err == nil {
+		t.Fatal("want decode error")
+	}
+	c = New(&fake{errs: []error{errors.New("no action")}}, "rex")
+	if _, err := c.PluginInfo(context.Background()); err == nil {
+		t.Fatal("want error")
+	}
+}
+
+func TestActivityCalls(t *testing.T) {
+	c, f := newClient(`{"entries":[{"session_id":"session:1","window_index":2,"block_id":"block:1","records":[{"state":"working","updated_at":"2026-10-31T16:19:09+01:00"}]}]}`, "{}", "{}")
+	got, err := c.Activity(context.Background())
+	if err != nil || len(got) != 1 || got[0].WindowPos != 2 || got[0].Records[0].State != "working" {
+		t.Fatalf("got %+v, err %v", got, err)
+	}
+	if f.calls[0].args[0] != "--autostart=false" {
+		t.Fatalf("args %v", f.calls[0].args)
+	}
+	if err := c.FocusBlock(context.Background(), "session:1", "block:1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.SelectWindow(context.Background(), "client:1", "session:1", "window:1"); err != nil {
+		t.Fatal(err)
+	}
+	want := `api call client.perform - {"action":"session.select","args":{"session_id":"session:1","window_id":"window:1"},"client_id":"client:1"}`
+	if got := strings.Join(f.calls[2].args, " ") + " " + mustJSON(t, f.calls[2].stdin); got != want {
+		t.Fatalf("got %s", got)
+	}
+	c, _ = newClient("nope")
+	if _, err := c.Activity(context.Background()); err == nil {
+		t.Fatal("want decode error")
+	}
+	c = New(&fake{errs: []error{errors.New("down")}}, "rex")
+	if _, err := c.Activity(context.Background()); err == nil {
+		t.Fatal("want error")
+	}
+}

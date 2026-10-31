@@ -22,9 +22,11 @@ import (
 const appID = "client:app-0001"
 
 type deps struct {
-	rex   *apptest.Rex
-	sesh  *apptest.Sesh
-	namer *apptest.Namer
+	rex       *apptest.Rex
+	sesh      *apptest.Sesh
+	namer     *apptest.Namer
+	reloads   int
+	reloadErr error
 }
 
 func run(t *testing.T, d *deps, args ...string) (string, string, error) {
@@ -36,6 +38,9 @@ func run(t *testing.T, d *deps, args ...string) (string, string, error) {
 			Shell: &apptest.Shell{Output: "dir listing\n"},
 			Home:  "/home/me", Cwd: "/home/me", Getenv: func(string) string { return "" }, Stderr: stderr,
 		}, nil
+	}, reload: func(context.Context) error {
+		d.reloads++
+		return d.reloadErr
 	}}
 	root := newRoot("test", g)
 	var out, errOut bytes.Buffer
@@ -171,8 +176,97 @@ func TestBuildErrorsPropagate(t *testing.T) {
 
 func TestPluginCommand(t *testing.T) {
 	out, _, err := run(t, newDeps(), "plugin")
-	if err != nil || out != string(plugin.Lua) || !strings.Contains(out, `name = "sex_pick"`) {
+	if err != nil || out != string(plugin.Loader) {
 		t.Fatalf("err %v, out %.80q", err, out)
+	}
+	out, _, err = run(t, newDeps(), "plugin", "--source")
+	if err != nil || !strings.HasPrefix(out, `local SEX_VERSION, SEX_BIN = "test", "/`) || !strings.Contains(out, `name = "sex_pick"`) {
+		t.Fatalf("err %v, out %.120q", err, out)
+	}
+}
+
+func TestPluginInstall(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "lua", "sex.lua")
+	out, _, err := run(t, newDeps(), "plugin", "install", "--path", path)
+	if err != nil || !strings.Contains(out, "wrote "+path) {
+		t.Fatalf("out %q, err %v", out, err)
+	}
+	if got, _ := os.ReadFile(path); string(got) != string(plugin.Loader) {
+		t.Fatal("loader not written")
+	}
+	if _, _, err := run(t, newDeps(), "plugin", "install", "--path", path); err == nil || !strings.Contains(err.Error(), "--force") {
+		t.Fatalf("err = %v", err)
+	}
+	if _, _, err := run(t, newDeps(), "plugin", "install", "--path", path, "--force"); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := run(t, newDeps(), "plugin", "install", "--path", filepath.Join(path, "x.lua")); err == nil {
+		t.Fatal("want error writing below a file")
+	}
+
+	t.Setenv("REX_CONFIG", "/etc/rex/main.lua")
+	if got, _ := defaultPluginPath(); got != "/etc/rex/sex.lua" {
+		t.Fatalf("got %s", got)
+	}
+	t.Setenv("REX_CONFIG", "")
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	if got, _ := defaultPluginPath(); got != filepath.Join(dir, "rex", "sex.lua") {
+		t.Fatalf("got %s", got)
+	}
+	out, _, err = run(t, newDeps(), "plugin", "install")
+	if err != nil || !strings.Contains(out, filepath.Join(dir, "rex", "sex.lua")) {
+		t.Fatalf("out %q, err %v", out, err)
+	}
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Setenv("HOME", "/home/me")
+	if got, _ := defaultPluginPath(); got != "/home/me/.config/rex/sex.lua" {
+		t.Fatalf("got %s", got)
+	}
+}
+
+func TestReloadOnUpgrade(t *testing.T) {
+	d := newDeps()
+	if _, _, err := run(t, d, "--plugin-version", "test", "list", "-r"); err != nil || d.reloads != 0 {
+		t.Fatalf("same version must not reload: reloads %d, err %v", d.reloads, err)
+	}
+	if _, _, err := run(t, d, "list", "-r"); err != nil || d.reloads != 0 {
+		t.Fatalf("no plugin version must not reload: reloads %d, err %v", d.reloads, err)
+	}
+	if _, _, err := run(t, d, "--plugin-version", "v0.0.1", "list", "-r"); err != nil || d.reloads != 1 {
+		t.Fatalf("older plugin must reload once: reloads %d, err %v", d.reloads, err)
+	}
+	d.reloadErr = errors.New("refused")
+	_, stderr, err := run(t, d, "--plugin-version", "v0.0.1", "list", "-r")
+	if err != nil || !strings.Contains(stderr, "reloading the Rex config after an upgrade: refused") {
+		t.Fatalf("a failed reload only warns: stderr %q, err %v", stderr, err)
+	}
+}
+
+type fakePlugin struct {
+	info rex.PluginInfo
+	err  error
+}
+
+func (f fakePlugin) PluginInfo(context.Context) (rex.PluginInfo, error) { return f.info, f.err }
+
+func TestCheckPlugin(t *testing.T) {
+	tests := []struct {
+		r    fakePlugin
+		exe  string
+		want string
+	}{
+		{fakePlugin{err: errors.New("no action")}, "/bin/sex", "warn  rex plugin: not loaded"},
+		{fakePlugin{info: rex.PluginInfo{Version: "v0.1.0", Bin: "/bin/sex"}}, "/bin/sex", "warn  rex plugin: loaded version v0.1.0, this sex is v0.2.0"},
+		{fakePlugin{info: rex.PluginInfo{Version: "v0.2.0", Bin: "/old/sex"}}, "/bin/sex", "warn  rex plugin: runs /old/sex, but this sex is /bin/sex"},
+		{fakePlugin{info: rex.PluginInfo{Version: "v0.2.0", Bin: "/bin/sex"}}, "/bin/sex", "ok    rex plugin: v0.2.0 (/bin/sex)"},
+	}
+	for _, tt := range tests {
+		var out bytes.Buffer
+		checkPlugin(context.Background(), &checker{w: &out}, tt.r, "v0.2.0", tt.exe)
+		if !strings.HasPrefix(out.String(), tt.want) {
+			t.Fatalf("got %q, want prefix %q", out.String(), tt.want)
+		}
 	}
 }
 

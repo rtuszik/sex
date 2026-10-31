@@ -37,14 +37,16 @@ func (c *checker) fail(format string, args ...any) {
 	_, _ = fmt.Fprintf(c.w, "FAIL  "+format+"\n", args...)
 }
 
-func newDoctorCmd(g *globals) *cobra.Command {
+func newDoctorCmd(g *globals, version string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "doctor",
 		Short: "Check Rex, Remote Control, sesh, zoxide, and fzf",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			c := &checker{w: cmd.OutOrStdout()}
+			exe, _ := executable()
 			runDoctor(cmd.Context(), c, g, rex.New(execx.OS{}, rex.FindBin()), exec.LookPath)
+			checkPlugin(cmd.Context(), c, rex.New(execx.OS{}, rex.FindBin()), version, exe)
 			if c.failed {
 				return errChecksFailed
 			}
@@ -112,4 +114,23 @@ func runDoctor(ctx context.Context, c *checker, g *globals, r rexDoctor, lookPat
 		return
 	}
 	c.ok("sesh config: %s", cfgPath)
+}
+
+type pluginReader interface {
+	PluginInfo(ctx context.Context) (rex.PluginInfo, error)
+}
+
+// checkPlugin compares the loaded plugin with this binary, wherever the loader is saved.
+func checkPlugin(ctx context.Context, c *checker, r pluginReader, version, exe string) {
+	info, err := r.PluginInfo(ctx)
+	switch {
+	case err != nil:
+		c.warn("rex plugin: not loaded; save the output of `sex plugin` where require finds it")
+	case info.Version != version:
+		c.warn("rex plugin: loaded version %s, this sex is %s; run rex config reload", info.Version, version)
+	case exe != "" && info.Bin != exe:
+		c.warn("rex plugin: runs %s, but this sex is %s; remove the copy you do not use", info.Bin, exe)
+	default:
+		c.ok("rex plugin: %s (%s)", info.Version, info.Bin)
+	}
 }

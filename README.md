@@ -35,14 +35,12 @@ go install github.com/rtuszik/sex/cmd/sex@latest
 
 The plugin adds three actions to Rex: `sex_pick` opens the session picker in a
 floating layer, `sex_activity` opens the activity picker, and `sex_last`
-switches to the previously shown session. Install it
-next to the Rex configuration file:
+switches to the previously shown session.
 
-```sh
-sex plugin > ~/.config/rex/sex.lua
-```
-
-Load it from `~/.config/rex/init.lua` and bind the actions:
+`sex plugin` prints a small loader. Save it anywhere Rex's `require` finds
+it; `sex plugin install` writes it to sex.lua in the directory of
+`$REX_CONFIG`, `$XDG_CONFIG_HOME/rex`, or `~/.config/rex`, and accepts
+`--path`. Load it from init.lua and bind the actions:
 
 ```lua
 require("sex").setup()
@@ -51,13 +49,17 @@ rex.bind("ctrl+b>shift+l", "sex_last")
 rex.bind("ctrl+b>shift+a", "sex_activity")
 ```
 
-Then run `rex config reload`. `setup` accepts a table with these fields:
+Then run `rex config reload`. On each configuration load the loader runs
+`sex plugin --source`, so the plugin always matches the installed binary.
+`sex plugin --source` prints the plugin itself, for those who prefer to keep
+a copy.
+
+`setup` accepts a table with these fields:
 
 ```text
-bin        Path to sex. Default: the first sex found in /opt/homebrew/bin,
-           /usr/local/bin, ~/go/bin, ~/.local/bin, or the mise shims.
-           A mise shim is resolved to the installed binary at load; run
-           rex config reload after upgrading sex with mise. Rex does not run
+bin        Path to sex. Default: $SEX_BIN, then the first sex found in
+           /opt/homebrew/bin, /usr/local/bin, ~/go/bin, ~/.local/bin, the
+           Nix profiles, and the mise and asdf shims. Rex does not run
            commands with the PATH of an interactive shell.
 host       "layer" (default), "split", or "tab".
 bounds     Layer position { x, y, w, h } as fractions of the window.
@@ -68,6 +70,15 @@ fzf_args   Extra fzf options, appended after the defaults.
 
 `sex_last` switches through the app and works without Remote Control.
 `sex_pick` and `sex_activity` do not.
+
+## Upgrading
+
+Upgrade the binary with the tool that installed it, for example
+`mise upgrade` or `go install github.com/rtuszik/sex/cmd/sex@latest`. The
+plugin passes its version to every command it starts; when sex is newer, it
+reloads the Rex configuration once, and the next action uses the new plugin.
+`sex doctor` reports a plugin that does not match the binary, including a
+second copy of sex that the plugin still runs.
 
 ## Usage
 

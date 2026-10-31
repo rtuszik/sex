@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -17,9 +18,11 @@ import (
 )
 
 type globals struct {
-	seshConfig string
-	client     string
-	build      func(stderr io.Writer) (*app.App, error)
+	seshConfig    string
+	client        string
+	pluginVersion string
+	build         func(stderr io.Writer) (*app.App, error)
+	reload        func(ctx context.Context) error
 }
 
 func NewRoot(version string) *cobra.Command {
@@ -33,9 +36,16 @@ func newRoot(version string, g *globals) *cobra.Command {
 		Version:       version,
 		SilenceUsage:  true,
 		SilenceErrors: false,
+		PersistentPreRun: func(cmd *cobra.Command, _ []string) {
+			if err := g.reloadOnUpgrade(cmd.Context(), version); err != nil {
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "sex: reloading the Rex config after an upgrade: %v\n", err)
+			}
+		},
 	}
 	root.PersistentFlags().StringVar(&g.seshConfig, "sesh-config", "", "path to sesh.toml")
 	root.PersistentFlags().StringVar(&g.client, "client", "", "Rex app client to switch, as ID or label (default: $REX_CLIENT or the only app)")
+	root.PersistentFlags().StringVar(&g.pluginVersion, "plugin-version", "", "version of the Rex plugin that started sex")
+	_ = root.PersistentFlags().MarkHidden("plugin-version")
 	root.AddCommand(
 		newListCmd(g),
 		newConnectCmd(g),
@@ -45,8 +55,8 @@ func newRoot(version string, g *globals) *cobra.Command {
 		newRootCmd(g),
 		newPickCmd(g),
 		newActivityCmd(g),
-		newDoctorCmd(g),
-		newPluginCmd(),
+		newDoctorCmd(g, version),
+		newPluginCmd(version),
 	)
 	return root
 }

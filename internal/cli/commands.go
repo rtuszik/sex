@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/rtuszik/sex/internal/app"
-	"github.com/rtuszik/sex/plugin"
 	"github.com/spf13/cobra"
 )
 
@@ -154,18 +153,6 @@ func newRootCmd(g *globals) *cobra.Command {
 				return err
 			}
 			_, err = fmt.Fprintln(cmd.OutOrStdout(), name)
-			return err
-		},
-	}
-}
-
-func newPluginCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "plugin",
-		Short: "Print the Rex plugin (save as ~/.config/rex/sex.lua)",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			_, err := cmd.OutOrStdout().Write(plugin.Lua)
 			return err
 		},
 	}

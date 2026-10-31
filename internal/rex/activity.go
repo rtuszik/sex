@@ -57,3 +57,21 @@ func (c *Client) SelectWindow(ctx context.Context, clientID, sessionID, windowID
 func (c *Client) FocusBlock(ctx context.Context, sessionID, blockID string) error {
 	return c.Call(ctx, "session.focus_block", map[string]string{"session_id": sessionID, "block_id": blockID}, nil)
 }
+
+type PluginInfo struct {
+	Version string `json:"version"`
+	Bin     string `json:"bin"`
+}
+
+// PluginInfo asks the loaded Rex plugin for its version and the sex binary it runs.
+func (c *Client) PluginInfo(ctx context.Context) (PluginInfo, error) {
+	var info PluginInfo
+	out, err := c.read(ctx, nil, "do", "sex_version")
+	if err != nil {
+		return info, err
+	}
+	if err := json.Unmarshal(out, &info); err != nil {
+		return info, fmt.Errorf("rex: decoding plugin info: %w", err)
+	}
+	return info, nil
+}
