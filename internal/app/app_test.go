@@ -97,6 +97,9 @@ func TestResolveClient(t *testing.T) {
 		env      string
 		apps     []rex.AppClient
 		appsErr  error
+		block    bool
+		owner    string
+		ownerErr error
 		want     string
 		wantErr  string
 	}{
@@ -108,6 +111,9 @@ func TestResolveClient(t *testing.T) {
 		{name: "no match", explicit: "tv", apps: two, wantErr: "no Rex app matches"},
 		{name: "no apps", wantErr: ErrNoApp.Error()},
 		{name: "several", apps: two, wantErr: "several Rex apps"},
+		{name: "several, terminal owner", apps: two, block: true, owner: "client:bbbb2222", want: "client:bbbb2222"},
+		{name: "several, owner not an app", apps: two, block: true, owner: "client:web", wantErr: "several Rex apps"},
+		{name: "several, owner error", apps: two, block: true, ownerErr: errors.New("gone"), wantErr: "several Rex apps"},
 		{name: "rex error", appsErr: errors.New("down"), wantErr: "down"},
 	}
 	for _, tt := range tests {
@@ -115,6 +121,10 @@ func TestResolveClient(t *testing.T) {
 			f := newFixture(t)
 			f.rex.Apps, f.rex.AppsErr = tt.apps, tt.appsErr
 			f.env["REX_CLIENT"] = tt.env
+			f.rex.Owner, f.rex.OwnerErr = tt.owner, tt.ownerErr
+			if tt.block {
+				f.env["REX_SESSION"], f.env["REX_BLOCK"] = "session:me", "block:me"
+			}
 			got, err := f.app.ResolveClient(ctx, tt.explicit)
 			if tt.wantErr != "" {
 				if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
@@ -621,4 +631,35 @@ func TestExpandAndHelpers(t *testing.T) {
 	var nilEnv App
 	assertEqual(t, nilEnv.env("X"), "")
 	nilEnv.warnf("dropped")
+}
+
+func TestResolveClientAsksOwnerOfCurrentTerminal(t *testing.T) {
+	f := newFixture(t)
+	f.rex.Apps = append(f.rex.Apps, rex.AppClient{ID: "client:phone", Label: "iPhone"})
+	f.rex.Owner = "client:phone"
+	f.env["REX_SESSION"], f.env["REX_BLOCK"] = "session:me", "block:me"
+	got, err := f.app.ResolveClient(context.Background(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertEqual(t, got, "client:phone")
+	assertSlice(t, f.rex.OwnerQueries, []string{"session:me|block:me"})
+}
+
+func TestConnectBackgroundWithoutServer(t *testing.T) {
+	f := newFixture(t)
+	f.rex.Apps = nil
+	f.rex.SnapErr = &rex.APIError{Msg: "rex: no Rex server is running", Exit: 4}
+	f.rex.CreateRes = rex.Created{SessionID: "session:new", WindowIDs: []string{"window:1"}}
+	id, err := f.app.Connect(context.Background(), "dotfiles", ConnectOptions{Background: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertEqual(t, id, "session:new")
+
+	f = newFixture(t)
+	f.rex.SnapErr = &rex.APIError{Msg: "rex: no Rex server is running", Exit: 4}
+	if _, err := f.app.Connect(context.Background(), "dotfiles", ConnectOptions{}); err == nil {
+		t.Fatal("a switching connect needs a running server")
+	}
 }

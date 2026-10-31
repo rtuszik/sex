@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -66,7 +67,7 @@ func TestSessions(t *testing.T) {
 	if len(got) != 1 || got[0].ID != "session:1" || got[0].Label != "api" {
 		t.Fatalf("got %+v", got)
 	}
-	if strings.Join(f.calls[0].args, " ") != "api call session.list -" {
+	if strings.Join(f.calls[0].args, " ") != "--autostart=false api call session.list -" {
 		t.Fatalf("args %v", f.calls[0].args)
 	}
 }
@@ -135,7 +136,7 @@ func TestCapture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got != "screen\n" || strings.Join(f.calls[0].args, " ") != "capture -s session:1 -b block:1 --format vt --trim" {
+	if got != "screen\n" || strings.Join(f.calls[0].args, " ") != "--autostart=false capture -s session:1 -b block:1 --format vt --trim" {
 		t.Fatalf("got %q, args %v", got, f.calls[0].args)
 	}
 }
@@ -149,7 +150,7 @@ func TestSnapshot(t *testing.T) {
 	if len(got) != 2 || got[0].Cwd != "/a" || got[0].ShownAt.IsZero() || !got[1].ShownAt.IsZero() {
 		t.Fatalf("got %+v", got)
 	}
-	if strings.Join(f.calls[0].args, " ") != `do - --args {"client":"client:1"}` {
+	if strings.Join(f.calls[0].args, " ") != `--autostart=false do - --args {"client":"client:1"}` {
 		t.Fatalf("args %v", f.calls[0].args)
 	}
 }
@@ -234,5 +235,43 @@ func TestFindBin(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	if got := FindBin(); got != "rex" {
 		t.Fatalf("got %s, want rex", got)
+	}
+}
+
+func TestBlockOwner(t *testing.T) {
+	c, f := newClient(`{"columns":80,"owner":"client:app"}`)
+	got, err := c.BlockOwner(context.Background(), "session:1", "block:1")
+	if err != nil || got != "client:app" {
+		t.Fatalf("got %q, err %v", got, err)
+	}
+	want := `--autostart=false api call block.method - {"args":{},"block_id":"block:1","method":"size","session_id":"session:1"}`
+	if got := strings.Join(f.calls[0].args, " ") + " " + mustJSON(t, f.calls[0].stdin); got != want {
+		t.Fatalf("call\n got %s\nwant %s", got, want)
+	}
+	c = New(&fake{errs: []error{errors.New("down")}}, "rex")
+	if _, err := c.BlockOwner(context.Background(), "s", "b"); err == nil {
+		t.Fatal("want error")
+	}
+}
+
+func TestMutatingCallsMayAutostart(t *testing.T) {
+	c, f := newClient("{}")
+	if err := c.Destroy(context.Background(), "session:1"); err != nil {
+		t.Fatal(err)
+	}
+	if f.calls[0].args[0] == "--autostart=false" {
+		t.Fatal("destroy must not disable autostart")
+	}
+}
+
+func TestIsUnreachable(t *testing.T) {
+	err := exec.Command("sh", "-c", "exit 4").Run()
+	wrapped := wrap(&execx.Error{Stderr: "Error: no Rex server is running at /x.sock, and autostart is disabled", Err: err})
+	if !IsUnreachable(wrapped) {
+		t.Fatalf("want unreachable: %#v", wrapped)
+	}
+	other := wrap(&execx.Error{Stderr: "Error: boom", Err: exec.Command("sh", "-c", "exit 1").Run()})
+	if IsUnreachable(other) || IsUnreachable(errors.New("plain")) {
+		t.Fatal("only exit status 4 is unreachable")
 	}
 }

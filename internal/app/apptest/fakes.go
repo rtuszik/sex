@@ -14,23 +14,26 @@ import (
 )
 
 type Rex struct {
-	Snaps      []rex.Snapshot
-	SnapErr    error
-	SnapClient []string
-	Apps       []rex.AppClient
-	AppsErr    error
-	Created    []rex.CreateOpts
-	CreateRes  rex.Created
-	CreateErr  error
-	Focused    []string
-	FocusErr   error
-	Selected   []string
-	SelectErr  error
-	Destroyed  []string
-	DestroyErr error
-	Screen     string
-	CaptureErr error
-	Captured   []string
+	Snaps        []rex.Snapshot
+	SnapErr      error
+	SnapClient   []string
+	Apps         []rex.AppClient
+	AppsErr      error
+	Owner        string
+	OwnerErr     error
+	OwnerQueries []string
+	Created      []rex.CreateOpts
+	CreateRes    rex.Created
+	CreateErr    error
+	Focused      []string
+	FocusErr     error
+	Selected     []string
+	SelectErr    error
+	Destroyed    []string
+	DestroyErr   error
+	Screen       string
+	CaptureErr   error
+	Captured     []string
 }
 
 func (r *Rex) Snapshot(_ context.Context, clientID string) ([]rex.Snapshot, error) {
@@ -39,6 +42,11 @@ func (r *Rex) Snapshot(_ context.Context, clientID string) ([]rex.Snapshot, erro
 }
 
 func (r *Rex) AppClients(context.Context) ([]rex.AppClient, error) { return r.Apps, r.AppsErr }
+
+func (r *Rex) BlockOwner(_ context.Context, sessionID, blockID string) (string, error) {
+	r.OwnerQueries = append(r.OwnerQueries, sessionID+"|"+blockID)
+	return r.Owner, r.OwnerErr
+}
 
 func (r *Rex) Create(_ context.Context, opts rex.CreateOpts) (rex.Created, error) {
 	r.Created = append(r.Created, opts)

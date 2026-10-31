@@ -28,7 +28,7 @@ func (c *Client) Snapshot(ctx context.Context, clientID string) ([]Snapshot, err
 	if err != nil {
 		return nil, err
 	}
-	out, err := c.exec(ctx, snapshotScript, "do", "-", "--args", string(args))
+	out, err := c.read(ctx, snapshotScript, "do", "-", "--args", string(args))
 	if err != nil {
 		return nil, err
 	}

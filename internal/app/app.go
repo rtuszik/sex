@@ -24,6 +24,7 @@ const (
 type Rex interface {
 	Snapshot(ctx context.Context, clientID string) ([]rex.Snapshot, error)
 	AppClients(ctx context.Context) ([]rex.AppClient, error)
+	BlockOwner(ctx context.Context, sessionID, blockID string) (string, error)
 	Create(ctx context.Context, opts rex.CreateOpts) (rex.Created, error)
 	FocusWindow(ctx context.Context, sessionID, windowID string) error
 	Select(ctx context.Context, clientID, sessionID string) error
@@ -98,7 +99,8 @@ func (a *App) warnf(format string, args ...any) {
 
 var ErrNoApp = errors.New("no Rex app is connected")
 
-// ResolveClient picks the app whose view sex switches: explicit, then REX_CLIENT, then the only app.
+// ResolveClient picks the app whose view sex switches: explicit, then REX_CLIENT, then the only app,
+// then the app that shows the current terminal.
 func (a *App) ResolveClient(ctx context.Context, explicit string) (string, error) {
 	want := explicit
 	if want == "" {
@@ -125,11 +127,31 @@ func (a *App) ResolveClient(ctx context.Context, explicit string) (string, error
 	case 1:
 		return apps[0].ID, nil
 	}
+	if id := a.terminalOwner(ctx, apps); id != "" {
+		return id, nil
+	}
 	names := make([]string, 0, len(apps))
 	for _, c := range apps {
 		names = append(names, fmt.Sprintf("%s (%s)", c.Label, c.ID))
 	}
 	return "", fmt.Errorf("several Rex apps are connected, pass --client: %s", strings.Join(names, ", "))
+}
+
+func (a *App) terminalOwner(ctx context.Context, apps []rex.AppClient) string {
+	session, block := a.env("REX_SESSION"), a.env("REX_BLOCK")
+	if session == "" || block == "" {
+		return ""
+	}
+	owner, err := a.Rex.BlockOwner(ctx, session, block)
+	if err != nil {
+		return ""
+	}
+	for _, c := range apps {
+		if c.ID == owner {
+			return owner
+		}
+	}
+	return ""
 }
 
 // sessions returns Rex sessions most recently shown first, with the on-screen one marked current.

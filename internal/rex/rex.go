@@ -27,6 +27,7 @@ var (
 type APIError struct {
 	Code string
 	Msg  string
+	Exit int
 }
 
 func (e *APIError) Error() string { return e.Msg }
@@ -37,6 +38,12 @@ func IsCode(err error, code string) bool {
 }
 
 func IsRemoteControlOff(err error) bool { return IsCode(err, "refused") }
+
+// IsUnreachable reports the CLI's exit status 4: no server answered.
+func IsUnreachable(err error) bool {
+	var apiErr *APIError
+	return errors.As(err, &apiErr) && apiErr.Exit == 4
+}
 
 type Session struct {
 	ID    string `json:"session_id"`
@@ -97,6 +104,11 @@ func isFile(p string) bool {
 	return err == nil && !info.IsDir()
 }
 
+// read runs a call that must not start a server: listing should not leave an empty one behind.
+func (c *Client) read(ctx context.Context, stdin []byte, args ...string) ([]byte, error) {
+	return c.exec(ctx, stdin, append([]string{"--autostart=false"}, args...)...)
+}
+
 func (c *Client) exec(ctx context.Context, stdin []byte, args ...string) ([]byte, error) {
 	out, err := c.run.Run(ctx, execx.Cmd{Name: c.bin, Args: args, Stdin: stdin})
 	if err != nil {
@@ -113,6 +125,10 @@ func wrap(err error) error {
 	msg := strings.TrimPrefix(execErr.Stderr, "Error: ")
 	msg = streamNoiseRe.ReplaceAllString(msg, "")
 	apiErr := &APIError{Msg: "rex: " + msg}
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		apiErr.Exit = exitErr.ExitCode()
+	}
 	if m := codeRe.FindStringSubmatch(msg); m != nil {
 		apiErr.Code = m[1]
 	}
@@ -120,6 +136,10 @@ func wrap(err error) error {
 }
 
 func (c *Client) Call(ctx context.Context, method string, args, out any) error {
+	return c.call(ctx, c.exec, method, args, out)
+}
+
+func (c *Client) call(ctx context.Context, run func(context.Context, []byte, ...string) ([]byte, error), method string, args, out any) error {
 	if args == nil {
 		args = map[string]any{}
 	}
@@ -127,7 +147,7 @@ func (c *Client) Call(ctx context.Context, method string, args, out any) error {
 	if err != nil {
 		return err
 	}
-	b, err := c.exec(ctx, in, "api", "call", method, "-")
+	b, err := run(ctx, in, "api", "call", method, "-")
 	if err != nil {
 		return err
 	}
@@ -144,7 +164,7 @@ func (c *Client) Sessions(ctx context.Context) ([]Session, error) {
 	var res struct {
 		Sessions []Session `json:"sessions"`
 	}
-	if err := c.Call(ctx, "session.list", nil, &res); err != nil {
+	if err := c.call(ctx, c.read, "session.list", nil, &res); err != nil {
 		return nil, err
 	}
 	return res.Sessions, nil
@@ -161,7 +181,7 @@ func (c *Client) AppClients(ctx context.Context) ([]AppClient, error) {
 			} `json:"info"`
 		} `json:"clients"`
 	}
-	if err := c.Call(ctx, "client.list", nil, &res); err != nil {
+	if err := c.call(ctx, c.read, "client.list", nil, &res); err != nil {
 		return nil, err
 	}
 	var apps []AppClient
@@ -236,6 +256,18 @@ func (c *Client) Select(ctx context.Context, clientID, sessionID string) error {
 }
 
 func (c *Client) Capture(ctx context.Context, sessionID, blockID string) (string, error) {
-	out, err := c.exec(ctx, nil, "capture", "-s", sessionID, "-b", blockID, "--format", "vt", "--trim")
+	out, err := c.read(ctx, nil, "capture", "-s", sessionID, "-b", blockID, "--format", "vt", "--trim")
 	return string(out), err
+}
+
+// BlockOwner returns the client that controls the terminal's size, the app it is shown in.
+func (c *Client) BlockOwner(ctx context.Context, sessionID, blockID string) (string, error) {
+	var res struct {
+		Owner string `json:"owner"`
+	}
+	args := map[string]any{"session_id": sessionID, "block_id": blockID, "method": "size", "args": map[string]any{}}
+	if err := c.call(ctx, c.read, "block.method", args, &res); err != nil {
+		return "", err
+	}
+	return res.Owner, nil
 }

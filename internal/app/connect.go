@@ -115,7 +115,8 @@ func (a *App) Connect(ctx context.Context, raw string, opts ConnectOptions) (str
 		return "", clientErr
 	}
 	running, err := a.sessions(ctx, clientID)
-	if err != nil {
+	// With no server running, a background connect creates the session, which starts one.
+	if err != nil && (!opts.Background || !rex.IsUnreachable(err)) {
 		return "", err
 	}
 	it, err := a.Resolve(ctx, raw, running)
