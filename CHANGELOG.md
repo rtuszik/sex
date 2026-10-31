@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [v0.4.0](https://github.com/rtuszik/sex/compare/529b9c947494a07d354e7466ae9de33ca917f44c..v0.4.0) - 2026-10-31
+#### Features
+- (**plugin**) load plugin form installed binary and reload after upgrades - ([529b9c9](https://github.com/rtuszik/sex/commit/529b9c947494a07d354e7466ae9de33ca917f44c)) - Robin Tuszik
+
+- - -
+
 ## [v0.3.0](https://github.com/rtuszik/sex/compare/e9ae59bf7a8f4444ccb31f126970c7de0228029a..v0.3.0) - 2026-10-31
 #### Features
 - add activity picker for terminals that report a program status - ([e9ae59b](https://github.com/rtuszik/sex/commit/e9ae59bf7a8f4444ccb31f126970c7de0228029a)) - Robin Tuszik
