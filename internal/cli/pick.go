@@ -42,27 +42,16 @@ func newPickCmd(g *globals) *cobra.Command {
 				_ = pw.CloseWithError(err)
 				listErr <- err
 			}()
-			// Rex floating layers draw the default background as transparent; paint it explicitly.
-			bg := ""
-			if os.Getenv("REX_BLOCK") != "" {
-				bg, _ = termbg.Query()
-			}
-			fzf := exec.CommandContext(cmd.Context(), "fzf", fzfArgs(self, g.client, bg, args)...)
+			fzf := exec.CommandContext(cmd.Context(), "fzf", fzfArgs(self, g.client, bgColor(), args)...)
 			fzf.Stdin = pr
-			fzf.Stderr = os.Stderr
-			out, err := fzf.Output()
+			choice, err := runFzf(fzf)
 			_ = pr.Close()
 			if lerr := <-listErr; lerr != nil && !errors.Is(lerr, io.ErrClosedPipe) {
 				return lerr
 			}
-			var exitErr *exec.ExitError
-			if errors.As(err, &exitErr) && (exitErr.ExitCode() == 1 || exitErr.ExitCode() == 130) {
-				return nil
-			}
 			if err != nil {
 				return err
 			}
-			choice := strings.TrimSpace(string(out))
 			if choice == "" {
 				return nil
 			}
@@ -78,27 +67,53 @@ func fzfArgs(self, client, bg string, extra []string) []string {
 		sex += " --client " + shellQuote(client)
 	}
 	list := sex + " list --icons"
-	args := []string{
+	args := append(fzfStyle(" sex ", "^a all  ^t rex  ^g config  ^x zoxide  ^d kill  ^/ preview", bg),
+		"--bind", "ctrl-a:change-prompt(⚡  )+reload("+list+")",
+		"--bind", "ctrl-t:change-prompt(  )+reload("+list+" -r)",
+		"--bind", "ctrl-g:change-prompt(⚙️  )+reload("+list+" -c)",
+		"--bind", "ctrl-x:change-prompt(📁  )+reload("+list+" -z)",
+		"--bind", "ctrl-d:execute("+sex+" kill {})+change-prompt(⚡  )+reload("+list+")",
+		"--preview", sex+" preview {}",
+	)
+	return append(args, extra...)
+}
+
+// fzfStyle is the look both pickers share.
+func fzfStyle(label, footer, bg string) []string {
+	return []string{
 		"--no-sort", "--ansi",
 		"--layout", "reverse",
 		"--style", "full:rounded",
-		"--input-label", " sex ",
+		"--input-label", label,
 		"--prompt", "⚡  ",
 		"--pointer", "▌",
 		"--info", "inline-right",
-		"--footer", "^a all  ^t rex  ^g config  ^x zoxide  ^d kill  ^/ preview",
+		"--footer", footer,
 		"--color", fzfColors(bg),
 		"--bind", "tab:down,btab:up",
 		"--bind", "ctrl-/:toggle-preview",
-		"--bind", "ctrl-a:change-prompt(⚡  )+reload(" + list + ")",
-		"--bind", "ctrl-t:change-prompt(  )+reload(" + list + " -r)",
-		"--bind", "ctrl-g:change-prompt(⚙️  )+reload(" + list + " -c)",
-		"--bind", "ctrl-x:change-prompt(📁  )+reload(" + list + " -z)",
-		"--bind", "ctrl-d:execute(" + sex + " kill {})+change-prompt(⚡  )+reload(" + list + ")",
-		"--preview", sex + " preview {}",
 		"--preview-window", "right:55%:hidden",
 	}
-	return append(args, extra...)
+}
+
+// bgColor paints Rex floating layers, whose default background is transparent.
+func bgColor() string {
+	if os.Getenv("REX_BLOCK") == "" {
+		return ""
+	}
+	bg, _ := termbg.Query()
+	return bg
+}
+
+// runFzf returns the chosen line, or "" when the user cancelled.
+func runFzf(cmd *exec.Cmd) (string, error) {
+	cmd.Stderr = os.Stderr
+	out, err := cmd.Output()
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) && (exitErr.ExitCode() == 1 || exitErr.ExitCode() == 130) {
+		return "", nil
+	}
+	return strings.TrimSpace(string(out)), err
 }
 
 // fzfColors uses the 16 theme colors so the picker follows any Rex theme.

@@ -44,6 +44,7 @@ func newRoot(version string, g *globals) *cobra.Command {
 		newKillCmd(g),
 		newRootCmd(g),
 		newPickCmd(g),
+		newActivityCmd(g),
 		newDoctorCmd(g),
 		newPluginCmd(),
 	)

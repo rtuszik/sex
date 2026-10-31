@@ -2,6 +2,7 @@
 --   require("sex").setup()
 --   rex.bind("ctrl+b>shift+t", "sex_pick")
 --   rex.bind("ctrl+b>shift+l", "sex_last")
+--   rex.bind("ctrl+b>shift+a", "sex_activity")
 local M = {}
 
 local home = os.getenv("HOME") or ""
@@ -44,8 +45,9 @@ local function resolve_shim(bin)
   return bin
 end
 
-local function picker_layout(opts, ctx)
-  local argv = { opts.bin, "pick" }
+local function picker_layout(opts, ctx, command)
+  local argv = { opts.bin }
+  for _, a in ipairs(command) do argv[#argv + 1] = a end
   if ctx.client_id ~= nil then
     argv[#argv + 1] = "--client"
     argv[#argv + 1] = ctx.client_id
@@ -60,8 +62,8 @@ local function picker_layout(opts, ctx)
   }
 end
 
-local function open_picker(opts, ctx)
-  local layout = picker_layout(opts, ctx)
+local function open_picker(opts, ctx, command)
+  local layout = picker_layout(opts, ctx, command)
   if opts.host == "layer" then
     return rex.session.new_layer{ bounds = opts.bounds, focus = true, layout = layout }
   end
@@ -94,7 +96,18 @@ function M.setup(opts)
     category = "Sessions",
     keywords = "sex sesh session switch project zoxide fzf",
     run = function(ctx)
-      local _, err = open_picker(opts, ctx)
+      local _, err = open_picker(opts, ctx, { "pick" })
+      if err ~= nil then error(err, 0) end
+    end,
+  }
+
+  rex.action{
+    name = "sex_activity",
+    title = "Pick Activity (sex)",
+    category = "Sessions",
+    keywords = "sex activity status agent blocked working waiting attention",
+    run = function(ctx)
+      local _, err = open_picker(opts, ctx, { "activity", "pick" })
       if err ~= nil then error(err, 0) end
     end,
   }

@@ -25,6 +25,9 @@ type Rex interface {
 	Snapshot(ctx context.Context, clientID string) ([]rex.Snapshot, error)
 	AppClients(ctx context.Context) ([]rex.AppClient, error)
 	BlockOwner(ctx context.Context, sessionID, blockID string) (string, error)
+	Activity(ctx context.Context) ([]rex.Activity, error)
+	FocusBlock(ctx context.Context, sessionID, blockID string) error
+	SelectWindow(ctx context.Context, clientID, sessionID, windowID string) error
 	Create(ctx context.Context, opts rex.CreateOpts) (rex.Created, error)
 	FocusWindow(ctx context.Context, sessionID, windowID string) error
 	Select(ctx context.Context, clientID, sessionID string) error

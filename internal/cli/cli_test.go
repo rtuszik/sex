@@ -157,7 +157,7 @@ func TestConnectLastKillPreviewRoot(t *testing.T) {
 
 func TestBuildErrorsPropagate(t *testing.T) {
 	boom := errors.New("config broken")
-	for _, args := range [][]string{{"list"}, {"connect", "x"}, {"last"}, {"preview", "x"}, {"kill", "x"}, {"root"}, {"pick"}} {
+	for _, args := range [][]string{{"list"}, {"connect", "x"}, {"last"}, {"preview", "x"}, {"kill", "x"}, {"root"}, {"pick"}, {"activity"}, {"activity", "pick"}, {"activity", "preview", "x"}} {
 		g := &globals{build: func(io.Writer) (*app.App, error) { return nil, boom }}
 		root := newRoot("test", g)
 		root.SetOut(io.Discard)
@@ -316,5 +316,58 @@ func TestDoctor(t *testing.T) {
 	runDoctor(context.Background(), c, &globals{seshConfig: cfg}, fakeDoctorRex{}, found)
 	if !strings.Contains(out.String(), "FAIL  sesh config") {
 		t.Fatalf("out %s", out.String())
+	}
+}
+
+func TestActivityCommand(t *testing.T) {
+	d := newDeps()
+	d.rex.Activities = []rex.Activity{
+		{SessionID: "session:a", Session: "api", WindowID: "window:a", Window: "build", BlockID: "block:a",
+			Records: []rex.StatusRecord{{App: "codex", State: "blocked"}}},
+		{SessionID: "session:b", Session: "web", WindowID: "window:b", Window: "main", BlockID: "block:b",
+			Records: []rex.StatusRecord{{App: "claude", State: "idle"}}},
+	}
+	out, _, err := run(t, d, "activity")
+	if err != nil || out != "● blocked  api › build  codex\n○ idle  web › main  claude\n" {
+		t.Fatalf("out %q, err %v", out, err)
+	}
+	out, _, err = run(t, d, "activity", "-A", "--rows")
+	if err != nil || !strings.HasPrefix(out, "block:a\t") || strings.Contains(out, "block:b") {
+		t.Fatalf("out %q, err %v", out, err)
+	}
+	out, _, err = run(t, d, "activity", "-j")
+	if err != nil || !strings.Contains(out, `"state": "blocked"`) {
+		t.Fatalf("out %q, err %v", out, err)
+	}
+	d.rex.Screen = "screen\n"
+	out, _, err = run(t, d, "activity", "preview", "block:a")
+	if err != nil || out != "screen\n" {
+		t.Fatalf("out %q, err %v", out, err)
+	}
+	d.rex.Activities = nil
+	out, _, err = run(t, d, "activity", "-j")
+	if err != nil || strings.TrimSpace(out) != "[]" {
+		t.Fatalf("out %q, err %v", out, err)
+	}
+	d.rex.ActivityErr = errors.New("down")
+	if _, _, err := run(t, d, "activity"); err == nil {
+		t.Fatal("want error")
+	}
+}
+
+func TestActivityFzfArgs(t *testing.T) {
+	joined := strings.Join(activityFzfArgs("/bin/sex", "client:1", true, "", []string{"--x"}), "\n")
+	for _, want := range []string{
+		"--with-nth\n2..",
+		"ctrl-r:reload('/bin/sex' --client 'client:1' activity --rows --active)",
+		"'/bin/sex' --client 'client:1' activity preview {1}",
+		" activity ",
+	} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("missing %q in\n%s", want, joined)
+		}
+	}
+	if !strings.HasSuffix(joined, "--x") {
+		t.Fatal("extra args must come last")
 	}
 }

@@ -33,8 +33,9 @@ go install github.com/rtuszik/sex/cmd/sex@latest
 
 ## Rex plugin
 
-The plugin adds two actions to Rex: `sex_pick` opens the picker in a floating
-layer, and `sex_last` switches to the previously shown session. Install it
+The plugin adds three actions to Rex: `sex_pick` opens the session picker in a
+floating layer, `sex_activity` opens the activity picker, and `sex_last`
+switches to the previously shown session. Install it
 next to the Rex configuration file:
 
 ```sh
@@ -47,6 +48,7 @@ Load it from `~/.config/rex/init.lua` and bind the actions:
 require("sex").setup()
 rex.bind("ctrl+b>shift+t", "sex_pick")
 rex.bind("ctrl+b>shift+l", "sex_last")
+rex.bind("ctrl+b>shift+a", "sex_activity")
 ```
 
 Then run `rex config reload`. `setup` accepts a table with these fields:
@@ -65,7 +67,7 @@ fzf_args   Extra fzf options, appended after the defaults.
 ```
 
 `sex_last` switches through the app and works without Remote Control.
-`sex_pick` does not.
+`sex_pick` and `sex_activity` do not.
 
 ## Usage
 
@@ -86,6 +88,15 @@ sex pick [-- fzf options]
 sex last [-p]
     Switch to the session shown before the current one. -p prints its ID.
 
+sex activity [-A] [-j]
+    List terminals whose programs report a status (OSC 7501), the data
+    behind Rex's Activity view. Blocked programs come first, then errors,
+    working, done, and idle. -A hides idle programs.
+
+sex activity pick [-A] [-- fzf options]
+    Select a terminal from that list with fzf. sex focuses it and switches
+    the app to its session and tab.
+
 sex preview name     Print a session's screen or a directory preview.
 sex kill name        Destroy a running Rex session.
 sex root             Print the git root name of the current session.
@@ -98,7 +109,8 @@ one is connected. It defaults to `$REX_CLIENT`, then to the only app.
 
 In the picker, ctrl-a, ctrl-t, ctrl-g, and ctrl-x show all sources, Rex
 sessions, config sessions, and zoxide directories. ctrl-d destroys the
-selected Rex session. ctrl-/ toggles the preview.
+selected Rex session. ctrl-/ toggles the preview. In the activity picker,
+ctrl-r reloads the list.
 
 To use a different fzf command:
 
