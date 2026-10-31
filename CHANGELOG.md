@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [v0.2.0](https://github.com/rtuszik/sex/compare/5f26c3eb24a01151d089231a5121cfb24821030f..v0.2.0) - 2026-10-31
+#### Features
+- open fzf before seeions list is ready - ([2783181](https://github.com/rtuszik/sex/commit/2783181c82b6fc4ce03c7679cc96ad21390f1f09)) - Robin Tuszik
+- switch app showing current terminal and avoid autostart on reading - ([92ed66d](https://github.com/rtuszik/sex/commit/92ed66d07c616e08b868e5fa4f3fd189b7b0086c)) - Robin Tuszik
+#### Documentation
+- (**readme**) rewrite and expand documentation - ([5f26c3e](https://github.com/rtuszik/sex/commit/5f26c3eb24a01151d089231a5121cfb24821030f)) - Robin Tuszik
+
+- - -
+
 ## [v0.1.0](https://github.com/rtuszik/sex/compare/61813ee876f2a411d185ac237e295295fba8fa9f..v0.1.0) - 2026-10-27
 #### Features
 - (**cmd/sex**) resolve version from go build info - ([593b342](https://github.com/rtuszik/sex/commit/593b3425b1b0e0fc06a39f024dddee101afefcac)) - Robin Tuszik
