@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [v0.4.1](https://github.com/rtuszik/sex/compare/819642da363ce5bc954501b915cd3d3298d86e04..v0.4.1) - 2026-10-31
+#### Bug Fixes
+- (**plugin**) search for sex when SEX_BIN is unset and report load failures - ([819642d](https://github.com/rtuszik/sex/commit/819642da363ce5bc954501b915cd3d3298d86e04)) - Robin Tuszik
+
+- - -
+
 ## [v0.4.0](https://github.com/rtuszik/sex/compare/529b9c947494a07d354e7466ae9de33ca917f44c..v0.4.0) - 2026-10-31
 #### Features
 - (**plugin**) load plugin form installed binary and reload after upgrades - ([529b9c9](https://github.com/rtuszik/sex/commit/529b9c947494a07d354e7466ae9de33ca917f44c)) - Robin Tuszik
