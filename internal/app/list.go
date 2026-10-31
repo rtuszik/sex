@@ -137,13 +137,22 @@ var glyphs = map[string]glyph{
 }
 
 // Format renders one picker row; StripIcon undoes the icon prefix.
+// With color, running Rex sessions are green and the one on screen is bold.
 func Format(it Item, icons, color bool) string {
+	name := it.Name
+	if color && icons && it.Source == SourceRex {
+		style := "32"
+		if it.Current {
+			style = "1;32"
+		}
+		name = fmt.Sprintf("\x1b[%sm%s\x1b[0m", style, name)
+	}
 	if !icons {
-		return it.Name
+		return name
 	}
 	g, ok := glyphs[it.Source]
 	if !ok {
-		return it.Name
+		return name
 	}
 	icon := g.icon
 	if it.Icon != "" {
@@ -152,7 +161,7 @@ func Format(it Item, icons, color bool) string {
 	if color {
 		icon = fmt.Sprintf("\x1b[%dm%s\x1b[39m", g.color, icon)
 	}
-	return icon + " " + it.Name
+	return icon + " " + name
 }
 
 var ansiRe = regexp.MustCompile(`\x1b\[[0-9;]*m`)

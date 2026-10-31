@@ -243,6 +243,11 @@ func TestFormatAndStripIcon(t *testing.T) {
 	assertEqual(t, Format(it, true, false), " api")
 	colored := Format(it, true, true)
 	assertEqual(t, StripIcon(colored), "api")
+	assertEqual(t, colored, "\x1b[34m\x1b[39m \x1b[32mapi\x1b[0m")
+	it.Current = true
+	assertEqual(t, Format(it, true, true), "\x1b[34m\x1b[39m \x1b[1;32mapi\x1b[0m")
+	assertEqual(t, StripIcon(Format(it, true, true)), "api")
+	assertEqual(t, Format(Item{Source: SourceConfig, Name: "cfg"}, true, true), "\x1b[90m\x1b[39m cfg")
 	assertEqual(t, Format(Item{Source: "other", Name: "x"}, true, true), "x")
 	assertEqual(t, Format(Item{Source: SourceConfig, Name: "x", Icon: "★"}, true, false), "★ x")
 
