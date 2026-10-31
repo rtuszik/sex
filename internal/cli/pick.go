@@ -69,7 +69,7 @@ func fzfArgs(self, client, bg string, extra []string) []string {
 	list := sex + " list --icons"
 	args := append(fzfStyle("^a all  ^t rex  ^g config  ^x zoxide  ^d kill  ^/ preview", bg),
 		"--bind", "ctrl-a:change-prompt(⚡  )+reload("+list+")",
-		"--bind", "ctrl-t:change-prompt(  )+reload("+list+" -r)",
+		"--bind", "ctrl-t:change-prompt(\uebc8  )+reload("+list+" -r)",
 		"--bind", "ctrl-g:change-prompt(⚙️  )+reload("+list+" -c)",
 		"--bind", "ctrl-x:change-prompt(📁  )+reload("+list+" -z)",
 		"--bind", "ctrl-d:execute("+sex+" kill {})+change-prompt(⚡  )+reload("+list+")",

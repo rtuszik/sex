@@ -240,14 +240,14 @@ func TestListFailsWhenOnlySourceFails(t *testing.T) {
 func TestFormatAndStripIcon(t *testing.T) {
 	it := Item{Source: SourceRex, Name: "api"}
 	assertEqual(t, Format(it, false, true), "api")
-	assertEqual(t, Format(it, true, false), " api")
+	assertEqual(t, Format(it, true, false), "\uebc8 api")
 	colored := Format(it, true, true)
 	assertEqual(t, StripIcon(colored), "api")
-	assertEqual(t, colored, "\x1b[34m\x1b[39m \x1b[32mapi\x1b[0m")
+	assertEqual(t, colored, "\x1b[34m\uebc8\x1b[39m \x1b[32mapi\x1b[0m")
 	it.Current = true
-	assertEqual(t, Format(it, true, true), "\x1b[34m\x1b[39m \x1b[1;32mapi\x1b[0m")
+	assertEqual(t, Format(it, true, true), "\x1b[34m\uebc8\x1b[39m \x1b[1;32mapi\x1b[0m")
 	assertEqual(t, StripIcon(Format(it, true, true)), "api")
-	assertEqual(t, Format(Item{Source: SourceConfig, Name: "cfg"}, true, true), "\x1b[90m\x1b[39m cfg")
+	assertEqual(t, Format(Item{Source: SourceConfig, Name: "cfg"}, true, true), "\x1b[90m\ue615\x1b[39m cfg")
 	assertEqual(t, Format(Item{Source: "other", Name: "x"}, true, true), "x")
 	assertEqual(t, Format(Item{Source: SourceConfig, Name: "x", Icon: "★"}, true, false), "★ x")
 
@@ -693,5 +693,13 @@ func TestStreamEmitsRexSessionsFirst(t *testing.T) {
 	calls := 0
 	if err := f.app.Stream(context.Background(), ListOptions{Rex: true}, func([]Item) error { calls++; return nil }); err != nil || calls != 0 {
 		t.Fatalf("empty source must not emit: calls %d, err %v", calls, err)
+	}
+}
+
+func TestGlyphsAreNotEmpty(t *testing.T) {
+	for src, g := range glyphs {
+		if g.icon == "" {
+			t.Fatalf("source %s has no icon", src)
+		}
 	}
 }

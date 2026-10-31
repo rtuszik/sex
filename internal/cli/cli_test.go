@@ -80,7 +80,7 @@ func TestListCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out != " api\n web\n" {
+	if out != "\uebc8 api\n\uebc8 web\n" {
 		t.Fatalf("out %q", out)
 	}
 
@@ -307,7 +307,7 @@ func TestFzfArgs(t *testing.T) {
 	args := fzfArgs("/usr/bin/s ex", "client:1", "#161616", []string{"--height", "40%"})
 	joined := strings.Join(args, "\n")
 	for _, want := range []string{
-		`ctrl-t:change-prompt(  )+reload('/usr/bin/s ex' --client 'client:1' list --icons -r)`,
+		"ctrl-t:change-prompt(\uebc8  )+reload('/usr/bin/s ex' --client 'client:1' list --icons -r)",
 		`ctrl-d:execute('/usr/bin/s ex' --client 'client:1' kill {})`,
 		`'/usr/bin/s ex' --client 'client:1' preview {}`,
 		"--preview-window\nright:55%:hidden",

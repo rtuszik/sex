@@ -130,10 +130,11 @@ type glyph struct {
 	color int
 }
 
+// Nerd Font glyphs, written as escapes so editors cannot drop them.
 var glyphs = map[string]glyph{
-	SourceRex:    {icon: "", color: 34},
-	SourceConfig: {icon: "", color: 90},
-	SourceZoxide: {icon: "", color: 36},
+	SourceRex:    {icon: "\uebc8", color: 34},
+	SourceConfig: {icon: "\ue615", color: 90},
+	SourceZoxide: {icon: "\uf114", color: 36},
 }
 
 // Format renders one picker row; StripIcon undoes the icon prefix.
