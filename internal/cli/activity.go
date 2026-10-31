@@ -119,7 +119,7 @@ func activityFzfArgs(self, client string, active bool, bg string, extra []string
 	if active {
 		list += " --active"
 	}
-	args := append(fzfStyle(" activity ", "^r refresh  ^/ preview", bg),
+	args := append(fzfStyle("^r refresh  ^/ preview", bg),
 		"--delimiter", "\t",
 		"--with-nth", "2..",
 		"--bind", "ctrl-r:reload("+list+")",

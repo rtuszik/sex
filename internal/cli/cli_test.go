@@ -456,7 +456,6 @@ func TestActivityFzfArgs(t *testing.T) {
 		"--with-nth\n2..",
 		"ctrl-r:reload('/bin/sex' --client 'client:1' activity --rows --active)",
 		"'/bin/sex' --client 'client:1' activity preview {1}",
-		" activity ",
 	} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("missing %q in\n%s", want, joined)

@@ -26,7 +26,7 @@ local function argv(opts, ...)
   return out
 end
 
-local function picker_layout(opts, ctx, command)
+local function picker_layout(opts, ctx, label, command)
   local cmd = argv(opts, unpack(command))
   if ctx.client_id ~= nil then
     cmd[#cmd + 1] = "--client"
@@ -38,12 +38,13 @@ local function picker_layout(opts, ctx, command)
   end
   return rex.layout.block{
     flavor = "com.superlogical.terminal.shell",
+    label = label,
     options = { command = cmd },
   }
 end
 
-local function open_picker(opts, ctx, command)
-  local layout = picker_layout(opts, ctx, command)
+local function open_picker(opts, ctx, label, command)
+  local layout = picker_layout(opts, ctx, label, command)
   if opts.host == "layer" then
     return rex.session.new_layer{ bounds = opts.bounds, focus = true, layout = layout }
   end
@@ -76,7 +77,7 @@ function M.setup(opts)
     category = "Sessions",
     keywords = "sex sesh session switch project zoxide fzf",
     run = function(ctx)
-      local _, err = open_picker(opts, ctx, { "pick" })
+      local _, err = open_picker(opts, ctx, "sex", { "pick" })
       if err ~= nil then error(err, 0) end
     end,
   }
@@ -87,7 +88,7 @@ function M.setup(opts)
     category = "Sessions",
     keywords = "sex activity status agent blocked working waiting attention",
     run = function(ctx)
-      local _, err = open_picker(opts, ctx, { "activity", "pick" })
+      local _, err = open_picker(opts, ctx, "sex activity", { "activity", "pick" })
       if err ~= nil then error(err, 0) end
     end,
   }

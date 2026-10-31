@@ -67,7 +67,7 @@ func fzfArgs(self, client, bg string, extra []string) []string {
 		sex += " --client " + shellQuote(client)
 	}
 	list := sex + " list --icons"
-	args := append(fzfStyle(" sex ", "^a all  ^t rex  ^g config  ^x zoxide  ^d kill  ^/ preview", bg),
+	args := append(fzfStyle("^a all  ^t rex  ^g config  ^x zoxide  ^d kill  ^/ preview", bg),
 		"--bind", "ctrl-a:change-prompt(⚡  )+reload("+list+")",
 		"--bind", "ctrl-t:change-prompt(  )+reload("+list+" -r)",
 		"--bind", "ctrl-g:change-prompt(⚙️  )+reload("+list+" -c)",
@@ -78,13 +78,12 @@ func fzfArgs(self, client, bg string, extra []string) []string {
 	return append(args, extra...)
 }
 
-// fzfStyle is the look both pickers share.
-func fzfStyle(label, footer, bg string) []string {
+// fzfStyle is the look both pickers share. It draws no frame: the Rex pane already has one.
+func fzfStyle(footer, bg string) []string {
 	return []string{
 		"--no-sort", "--ansi",
 		"--layout", "reverse",
-		"--style", "full:rounded",
-		"--input-label", label,
+		"--style", "minimal",
 		"--prompt", "⚡  ",
 		"--pointer", "▌",
 		"--info", "inline-right",
