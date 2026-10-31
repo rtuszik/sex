@@ -2,6 +2,13 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [v0.4.3](https://github.com/rtuszik/sex/compare/23a24277f05ee2f0d9f70fd92ccfab897a2e56df..v0.4.3) - 2026-10-31
+#### Bug Fixes
+- (**pick**) restore source icons - ([1ee5e6e](https://github.com/rtuszik/sex/commit/1ee5e6ef525dc44d2503e6e4864f80784a97bb01)) - Robin Tuszik
+- (**pick**) color running sessions green and current bold - ([23a2427](https://github.com/rtuszik/sex/commit/23a24277f05ee2f0d9f70fd92ccfab897a2e56df)) - Robin Tuszik
+
+- - -
+
 ## [v0.4.2](https://github.com/rtuszik/sex/compare/aea7459c91b94310e613a847418e9d3340051215..v0.4.2) - 2026-10-31
 #### Bug Fixes
 - (**pick**) drop fzf frames inside the Rex pane and label picker panes - ([aea7459](https://github.com/rtuszik/sex/commit/aea7459c91b94310e613a847418e9d3340051215)) - Robin Tuszik
