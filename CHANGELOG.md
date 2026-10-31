@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [v0.3.0](https://github.com/rtuszik/sex/compare/e9ae59bf7a8f4444ccb31f126970c7de0228029a..v0.3.0) - 2026-10-31
+#### Features
+- add activity picker for terminals that report a program status - ([e9ae59b](https://github.com/rtuszik/sex/commit/e9ae59bf7a8f4444ccb31f126970c7de0228029a)) - Robin Tuszik
+
+- - -
+
 ## [v0.2.0](https://github.com/rtuszik/sex/compare/5f26c3eb24a01151d089231a5121cfb24821030f..v0.2.0) - 2026-10-31
 #### Features
 - open fzf before seeions list is ready - ([2783181](https://github.com/rtuszik/sex/commit/2783181c82b6fc4ce03c7679cc96ad21390f1f09)) - Robin Tuszik
