@@ -43,7 +43,7 @@ func fakeSex(t *testing.T, path string) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	script := "#!/bin/sh\nprintf '%s|' \"$0\" \"$@\"\ncommand -v fzf\n"
+	script := "#!/bin/sh\nprintf '%s|' \"$0\" \"$@\"\ncommand -v fzf || :\n"
 	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}
