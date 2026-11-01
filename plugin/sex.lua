@@ -26,8 +26,10 @@ local function argv(opts, ...)
   return out
 end
 
+-- The picker runs on the session's host, so sh finds sex there when this path is missing.
 local function picker_layout(opts, ctx, label, command)
-  local cmd = argv(opts, unpack(command))
+  local cmd = { "/bin/sh", "-c", SEX_RUN, "sex" }
+  for _, a in ipairs(argv(opts, unpack(command))) do cmd[#cmd + 1] = a end
   if ctx.client_id ~= nil then
     cmd[#cmd + 1] = "--client"
     cmd[#cmd + 1] = ctx.client_id

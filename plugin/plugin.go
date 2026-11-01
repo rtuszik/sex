@@ -13,9 +13,12 @@ var source string
 //go:embed loader.lua
 var Loader []byte
 
-// Source returns the plugin with the binary's version and path filled in.
+//go:embed run.sh
+var runScript string
+
+// Source returns the plugin with the binary's version, path, and start script filled in.
 func Source(version, bin string) string {
-	return fmt.Sprintf("local SEX_VERSION, SEX_BIN = %s, %s\n", luaQuote(version), luaQuote(bin)) + source
+	return fmt.Sprintf("local SEX_VERSION, SEX_BIN, SEX_RUN = %s, %s, %s\n", luaQuote(version), luaQuote(bin), luaQuote(runScript)) + source
 }
 
 // luaQuote writes a Lua 5.1 string literal; Lua 5.1 has no \x escapes.

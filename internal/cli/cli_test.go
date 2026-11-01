@@ -180,7 +180,7 @@ func TestPluginCommand(t *testing.T) {
 		t.Fatalf("err %v, out %.80q", err, out)
 	}
 	out, _, err = run(t, newDeps(), "plugin", "--source")
-	if err != nil || !strings.HasPrefix(out, `local SEX_VERSION, SEX_BIN = "test", "/`) || !strings.Contains(out, `name = "sex_pick"`) {
+	if err != nil || !strings.HasPrefix(out, `local SEX_VERSION, SEX_BIN, SEX_RUN = "test", "/`) || !strings.Contains(out, `name = "sex_pick"`) {
 		t.Fatalf("err %v, out %.120q", err, out)
 	}
 }
