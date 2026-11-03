@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "rex-plugin-authoring": {
+      "source": "rawnly/amber",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/rex-plugin-authoring/SKILL.md",
+      "computedHash": "7be426b4cb56955270edfe7d83105ed185d497cde13f212e279c162f21594a1b"
+    }
+  }
+}
