@@ -51,7 +51,7 @@ amber.setup({
 rex.bind("ctrl+b>shift+t", "sex_pick")
 ```
 
-Then run `rex do amber_install` and `rex config reload`. Use `path = "/abs/path/to/sex"` for a local checkout.
+Then run `rex config reload`, `rex do amber_install`, and `rex config reload` again. Use `path = "/abs/path/to/sex"` for a local checkout.
 
 Or add the plugin loader manually to your `rex.lua`:
 
