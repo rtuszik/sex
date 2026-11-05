@@ -20,6 +20,11 @@ SEX_VERSION = "{{exec(command='git describe --tags --always --dirty 2>/dev/null 
 description = "Build bin/sex"
 run = 'go build -ldflags "-X main.version=$SEX_VERSION" -o bin/sex ./cmd/sex'
 
+[tasks.dev]
+description = "Build bin/sex and reload the Rex config"
+depends = ["build"]
+run = "rex config reload"
+
 [tasks.install]
 description = "Install sex to GOBIN"
 run = 'go install -ldflags "-X main.version=$SEX_VERSION" ./cmd/sex'
