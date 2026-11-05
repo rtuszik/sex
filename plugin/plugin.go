@@ -1,4 +1,4 @@
-// Package plugin embeds the Rex Lua plugin and its loader.
+// Package plugin embeds the Rex Lua plugin.
 package plugin
 
 import (
@@ -10,13 +10,10 @@ import (
 //go:embed sex.lua
 var source string
 
-//go:embed loader.lua
-var Loader []byte
-
 //go:embed run.sh
 var runScript string
 
-// Source returns the plugin with the binary's version, path, and start script filled in.
+// Source returns plugin with the binary's version, path, and start script filled in.
 func Source(version, bin string) string {
 	return fmt.Sprintf("local SEX_VERSION, SEX_BIN, SEX_RUN = %s, %s, %s\n", luaQuote(version), luaQuote(bin), luaQuote(runScript)) + source
 }

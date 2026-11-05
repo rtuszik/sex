@@ -8,6 +8,7 @@ import (
 
 	"github.com/rtuszik/sex/internal/execx"
 	"github.com/rtuszik/sex/internal/rex"
+	"github.com/rtuszik/sex/lua"
 	"github.com/rtuszik/sex/plugin"
 	"github.com/spf13/cobra"
 )
@@ -23,7 +24,7 @@ func newPluginCmd(version string) *cobra.Command {
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if !source {
-				_, err := cmd.OutOrStdout().Write(plugin.Loader)
+				_, err := cmd.OutOrStdout().Write(lua.Loader)
 				return err
 			}
 			exe, err := executable()
@@ -74,7 +75,7 @@ func newPluginInstallCmd() *cobra.Command {
 			if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 				return err
 			}
-			if err := os.WriteFile(path, plugin.Loader, 0o644); err != nil {
+			if err := os.WriteFile(path, lua.Loader, 0o644); err != nil {
 				return err
 			}
 			_, err := fmt.Fprintf(cmd.OutOrStdout(), "wrote %s\nload it with require(\"sex\").setup() and run rex config reload\n", path)

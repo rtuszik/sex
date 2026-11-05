@@ -16,7 +16,7 @@ import (
 	"github.com/rtuszik/sex/internal/rex"
 	"github.com/rtuszik/sex/internal/sesh"
 	"github.com/rtuszik/sex/internal/state"
-	"github.com/rtuszik/sex/plugin"
+	"github.com/rtuszik/sex/lua"
 )
 
 const appID = "client:app-0001"
@@ -176,7 +176,7 @@ func TestBuildErrorsPropagate(t *testing.T) {
 
 func TestPluginCommand(t *testing.T) {
 	out, _, err := run(t, newDeps(), "plugin")
-	if err != nil || out != string(plugin.Loader) {
+	if err != nil || out != string(lua.Loader) {
 		t.Fatalf("err %v, out %.80q", err, out)
 	}
 	out, _, err = run(t, newDeps(), "plugin", "--source")
@@ -192,7 +192,7 @@ func TestPluginInstall(t *testing.T) {
 	if err != nil || !strings.Contains(out, "wrote "+path) {
 		t.Fatalf("out %q, err %v", out, err)
 	}
-	if got, _ := os.ReadFile(path); string(got) != string(plugin.Loader) {
+	if got, _ := os.ReadFile(path); string(got) != string(lua.Loader) {
 		t.Fatal("loader not written")
 	}
 	if _, _, err := run(t, newDeps(), "plugin", "install", "--path", path); err == nil || !strings.Contains(err.Error(), "--force") {

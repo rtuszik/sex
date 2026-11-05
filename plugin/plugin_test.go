@@ -15,18 +15,8 @@ func TestSource(t *testing.T) {
 	if !strings.HasPrefix(got, want) {
 		t.Fatalf("got %q", got[:strings.Index(got, "\n")+1])
 	}
-	if !strings.Contains(got, `name = "sex_version"`) || !strings.Contains(string(Loader), `"plugin", "--source"`) {
-		t.Fatal("plugin or loader content missing")
-	}
-}
-
-// An unset variable in the candidate table would be nil and end the search at once.
-func TestLoaderCandidatesHaveNoEnvLookups(t *testing.T) {
-	loader := string(Loader)
-	start := strings.Index(loader, "local candidates = {")
-	end := strings.Index(loader[start:], "\n}") + start
-	if start < 0 || strings.Contains(loader[start:end], "getenv") {
-		t.Fatal("candidates must be plain strings")
+	if !strings.Contains(got, `name = "sex_version"`) {
+		t.Fatal("plugin content missing")
 	}
 }
 

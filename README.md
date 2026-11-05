@@ -34,26 +34,41 @@ From source:
 go install github.com/rtuszik/sex/cmd/sex@latest
 ```
 
+### Amber
+
+With [Amber](https://github.com/rawnly/amber):
+
+```lua
+local amber = dofile(os.getenv("HOME") .. "/.local/share/rex/amber/amber.lua")
+
+amber.setup({
+  plugins = {
+    { "rtuszik/sex", opts = { host = "layer" } },
+  },
+})
+rex.bind("ctrl+b>shift+t", "sex_pick")
+rex.bind("ctrl+b>shift+l", "sex_last")
+rex.bind("ctrl+b>shift+a", "sex_activity")
+```
+
+The `sex` binary must still be installed.
+
+Then run `rex config reload`, `rex do amber_install`, and
+`rex config reload` again.
+
+The loader sits at `lua/sex.lua` with a `setup(opts)` function.
+Any Rex plugin manager that loads `lua/<name>.lua`
+and calls `setup` works.
+
 ## [Rex](https://www.superlogical.com/rex/docs/) plugin
 
 The plugin adds three actions to [Rex](https://www.superlogical.com/rex/docs/): `sex_pick` opens the session picker in a floating layer, `sex_activity` opens the activity picker, and `sex_last` switches to the previously shown session.
 
+### Manual
+
 `sex plugin install` adds `sex.lua` to `$REX_CONFIG`, `$XDG_CONFIG_HOME/rex`. (`--path` accepted)
 
-With [Amber](https://github.com/superlogical/amber) (the `sex` binary must still be installed):
-
-```lua
-amber.setup({
-  plugins = {
-    { "rtuszik/sex", main = "sex", opts = { host = "layer" } },
-  },
-})
-rex.bind("ctrl+b>shift+t", "sex_pick")
-```
-
-Then run `rex config reload`, `rex do amber_install`, and `rex config reload` again. Use `path = "/abs/path/to/sex"` for a local checkout.
-
-Or add the plugin loader manually to your `rex.lua`:
+Add the plugin loader to your `rex.lua`:
 
 ```lua
 require("sex").setup()
