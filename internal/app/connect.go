@@ -23,19 +23,22 @@ var ErrNotFound = errors.New("no session, config, directory, or zoxide match")
 // Resolve maps a picker row or name to a running session or a session to create,
 // in sesh's order: running, config, zoxide, directory, zoxide query.
 func (a *App) Resolve(ctx context.Context, raw string, running []Item) (Item, error) {
-	name := StripIcon(raw)
+	names := lookupNames(raw)
+	name := names[len(names)-1]
 	if name == "" {
 		return Item{}, errors.New("empty session name")
 	}
-	if it, ok := findRunning(running, name); ok {
+	if it, ok := findRunningAny(running, names); ok {
 		return it, nil
 	}
 	entries, err := a.Sesh.List(ctx, sesh.Query{Config: true, Zoxide: true, Live: true})
 	if err != nil {
 		a.warnf("%v", err)
 	}
-	if e := findEntry(entries, name, a.expand(name)); e != nil {
-		return a.fromEntry(ctx, e, running)
+	for _, n := range names {
+		if e := findEntry(entries, n, a.expand(n)); e != nil {
+			return a.fromEntry(ctx, e, running)
+		}
 	}
 	if path := a.expand(name); isDir(path) {
 		return a.fromPath(ctx, path, running)
@@ -44,6 +47,24 @@ func (a *App) Resolve(ctx context.Context, raw string, running []Item) (Item, er
 		return a.fromPath(ctx, path, running)
 	}
 	return Item{}, fmt.Errorf("%q: %w", name, ErrNotFound)
+}
+
+// lookupNames returns the exact name, then the name without a leading icon when it differs.
+func lookupNames(raw string) []string {
+	exact := strings.TrimSpace(ansiRe.ReplaceAllString(raw, ""))
+	if name := StripIcon(raw); name != exact {
+		return []string{exact, name}
+	}
+	return []string{exact}
+}
+
+func findRunningAny(running []Item, names []string) (Item, bool) {
+	for _, n := range names {
+		if it, ok := findRunning(running, n); ok {
+			return it, true
+		}
+	}
+	return Item{}, false
 }
 
 func findRunning(running []Item, name string) (Item, bool) {
@@ -257,7 +278,7 @@ func (a *App) Kill(ctx context.Context, raw string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	it, ok := findRunning(running, StripIcon(raw))
+	it, ok := findRunningAny(running, lookupNames(raw))
 	if !ok {
 		return "", fmt.Errorf("%q is not a running Rex session", StripIcon(raw))
 	}

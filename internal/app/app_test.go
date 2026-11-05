@@ -308,6 +308,40 @@ func TestConnectCreatesConfigSession(t *testing.T) {
 	assertEqual(t, f.store.Live["session:a"] && f.store.Live["session:new"], true)
 }
 
+func TestConnectNameStartingWithIcon(t *testing.T) {
+	const home = " Home"
+	ctx := context.Background()
+
+	f := newFixture(t)
+	f.sesh.Entries = append(f.sesh.Entries, sesh.Entry{Src: "config", Name: home, Path: "/home/me"})
+	f.rex.CreateRes = rex.Created{SessionID: "session:home", WindowIDs: []string{"window:1"}}
+	for _, raw := range []string{home, Format(Item{Source: SourceConfig, Name: home}, true, true)} {
+		f.rex.Created = nil
+		id, err := f.app.Connect(ctx, raw, ConnectOptions{})
+		if err != nil {
+			t.Fatalf("%q: %v", raw, err)
+		}
+		assertEqual(t, id, "session:home")
+		assertEqual(t, f.rex.Created[0].Label, home)
+	}
+
+	f = newFixture(t)
+	f.rex.Snaps = append(f.rex.Snaps, rex.Snapshot{ID: "session:home", Label: home, Cwd: "/home/me"})
+	id, err := f.app.Connect(ctx, home, ConnectOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertEqual(t, id, "session:home")
+	assertEqual(t, len(f.rex.Created), 0)
+
+	name, err := f.app.Kill(ctx, home)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertEqual(t, name, home)
+	assertSlice(t, f.rex.Destroyed, []string{"session:home"})
+}
+
 func equalCreate(a, b rex.CreateOpts) bool {
 	if a.Label != b.Label || len(a.Windows) != len(b.Windows) {
 		return false
