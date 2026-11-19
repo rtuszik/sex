@@ -2,6 +2,22 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [v0.5.0](https://github.com/rtuszik/sex/compare/9e6e2149fe555463783a425648faa3f69dae7a7a..v0.5.0) - 2026-11-19
+#### Features
+- (**plugin**) add command palette session and activity pickers - ([e32f9c2](https://github.com/rtuszik/sex/commit/e32f9c2098d7564097d9bda794d1dcfc7cbc0fee)) - Robin Tuszik
+#### Bug Fixes
+- (**plugin**) pass palette choice after -- and match home folder exactly - ([d65f1c5](https://github.com/rtuszik/sex/commit/d65f1c542bdf6f8c7b50545a31c4a936f8c67185)) - Robin Tuszik
+#### Miscellaneous Chores
+- (**deps**) update jdx/mise-action action to v5.2.9 (#18) - ([0f39181](https://github.com/rtuszik/sex/commit/0f3918166c42dc8aef487efc992cb30e9ab4bb33)) - koalabot-rt[bot], koalabot-rt[bot]
+- (**deps**) update jdx/mise-action action to v5.2.8 (#17) - ([624cbcb](https://github.com/rtuszik/sex/commit/624cbcb9cb2d955c1f17135c7a0dddaca84ab2ba)) - koalabot-rt[bot], koalabot-rt[bot]
+- (**deps**) update jdx/mise-action action to v5.2.7 (#16) - ([e916f94](https://github.com/rtuszik/sex/commit/e916f94f32a70f22c0b05d6f85468a726196cf2f)) - koalabot-rt[bot], koalabot-rt[bot]
+- (**deps**) update cocogitto/cocogitto-action action to v4.2.0 - ([14900ee](https://github.com/rtuszik/sex/commit/14900ee1b02910d92681dc04ee83688d9241ce3f)) - koalabot-rt[bot]
+- (**deps**) update jdx/mise-action action to v5.2.6 (#14) - ([9e6e214](https://github.com/rtuszik/sex/commit/9e6e2149fe555463783a425648faa3f69dae7a7a)) - koalabot-rt[bot], koalabot-rt[bot]
+#### Style
+- (**lua**) add stylua config and format with 4 spaces - ([7405b37](https://github.com/rtuszik/sex/commit/7405b37e923145f07a67af11fd55de5c451965ba)) - Robin Tuszik
+
+- - -
+
 ## [v0.4.6](https://github.com/rtuszik/sex/compare/225f4f93aabbbc23a8e5d32166dc6f6ff13e5197..v0.4.6) - 2026-11-05
 #### Bug Fixes
 - (**connect**) match session name before icon strip - ([5be6467](https://github.com/rtuszik/sex/commit/5be64674dcc2cf9e98a4642e8c2009ab836208f6)) - Robin Tuszik
