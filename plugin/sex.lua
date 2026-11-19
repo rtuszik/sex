@@ -74,10 +74,16 @@ local function ask(spec)
 end
 
 local function tilde(p)
-    if p == nil or home == "" or p:sub(1, #home) ~= home then
+    if p == nil or home == "" then
         return p
     end
-    return "~" .. p:sub(#home + 1)
+    if p == home then
+        return "~"
+    end
+    if p:sub(1, #home + 1) == home .. "/" then
+        return "~" .. p:sub(#home + 1)
+    end
+    return p
 end
 
 -- The picker runs on the session's host, so sh finds sex there when this path is missing.
@@ -184,7 +190,7 @@ function M.setup(opts)
             if type(choice) == "table" then
                 choice = choice.text
             end
-            local id = trim(run_sex(argv(opts, "connect", "--background", "--print", choice), path))
+            local id = trim(run_sex(argv(opts, "connect", "--background", "--print", "--", choice), path))
             rex.client.queue("session.select", { session_id = id })
         end,
     })
