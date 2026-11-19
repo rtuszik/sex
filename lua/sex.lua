@@ -45,7 +45,7 @@ local M = {}
 local function broken(reason)
     local msg = "sex: " .. reason
     rex.log("warn", msg)
-    for _, name in ipairs({ "sex_pick", "sex_activity", "sex_last" }) do
+    for _, name in ipairs({ "sex_pick", "sex_pick_palette", "sex_activity", "sex_activity_palette", "sex_last" }) do
         rex.action({
             name = name,
             title = name,

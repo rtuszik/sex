@@ -115,11 +115,16 @@ func TestConnectLastKillPreviewRoot(t *testing.T) {
 	}
 
 	d.rex.CreateRes = rex.Created{SessionID: "session:new", WindowIDs: []string{"window:1"}}
-	if _, _, err := run(t, d, "connect", "-b", "-c", "htop", "dotfiles"); err != nil {
-		t.Fatal(err)
+	out, _, err := run(t, d, "connect", "-b", "-c", "htop", "dotfiles")
+	if err != nil || out != "" {
+		t.Fatalf("out %q, err %v", out, err)
 	}
 	if d.rex.Created[0].Windows[0].Input != "htop\n" || len(d.rex.Selected) != 1 {
 		t.Fatalf("created %+v selected %v", d.rex.Created, d.rex.Selected)
+	}
+	out, _, err = run(t, d, "connect", "-b", "-p", "dotfiles")
+	if err != nil || out != "session:new\n" || len(d.rex.Selected) != 1 {
+		t.Fatalf("out %q, err %v, selected %v", out, err, d.rex.Selected)
 	}
 
 	d = newDeps()
@@ -128,7 +133,7 @@ func TestConnectLastKillPreviewRoot(t *testing.T) {
 	}
 	d.rex.Snaps[0].ShownAt = d.rex.Snaps[0].ShownAt.AddDate(2026, 0, 0)
 	d.rex.Snaps[1].ShownAt = d.rex.Snaps[0].ShownAt.AddDate(0, 0, -1)
-	out, _, err := run(t, d, "last", "--print")
+	out, _, err = run(t, d, "last", "--print")
 	if err != nil || out != "session:b\n" {
 		t.Fatalf("out %q, err %v", out, err)
 	}
