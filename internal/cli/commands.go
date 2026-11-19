@@ -60,6 +60,7 @@ func newListCmd(g *globals) *cobra.Command {
 
 func newConnectCmd(g *globals) *cobra.Command {
 	var opts app.ConnectOptions
+	var print bool
 	cmd := &cobra.Command{
 		Use:     "connect NAME",
 		Aliases: []string{"cn"},
@@ -71,12 +72,17 @@ func newConnectCmd(g *globals) *cobra.Command {
 				return err
 			}
 			opts.Client = g.client
-			_, err = a.Connect(cmd.Context(), strings.Join(args, " "), opts)
+			id, err := a.Connect(cmd.Context(), strings.Join(args, " "), opts)
+			if err != nil || !print {
+				return err
+			}
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), id)
 			return err
 		},
 	}
 	cmd.Flags().StringVarP(&opts.Command, "command", "c", "", "run COMMAND instead of the startup command")
 	cmd.Flags().BoolVarP(&opts.Background, "background", "b", false, "create the session without switching to it")
+	cmd.Flags().BoolVarP(&print, "print", "p", false, "print the session ID")
 	return cmd
 }
 

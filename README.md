@@ -49,6 +49,8 @@ amber.setup({
 rex.bind("ctrl+b>shift+t", "sex_pick")
 rex.bind("ctrl+b>shift+l", "sex_last")
 rex.bind("ctrl+b>shift+a", "sex_activity")
+rex.bind("ctrl+b>t", "sex_pick_palette")
+rex.bind("ctrl+b>a", "sex_activity_palette")
 ```
 
 The `sex` binary must still be installed.
@@ -62,7 +64,11 @@ and calls `setup` works.
 
 ## [Rex](https://www.superlogical.com/rex/docs/) plugin
 
-The plugin adds three actions to [Rex](https://www.superlogical.com/rex/docs/): `sex_pick` opens the session picker in a floating layer, `sex_activity` opens the activity picker, and `sex_last` switches to the previously shown session.
+The plugin adds five actions to [Rex](https://www.superlogical.com/rex/docs/): `sex_pick` opens the session picker in a floating layer, `sex_activity` opens the activity picker, and `sex_last` switches to the previously shown session.
+
+`sex_pick_palette` and `sex_activity_palette` show the same lists in the Rex command palette, without fzf.
+They have no preview and no picker keys. In `sex_pick_palette`, a typed name or path that is not in the list creates a session.
+The palette needs a Rex server with API revision 17 or later (see `rex version`) and a Rex app that shows palette prompts.
 
 ### Manual
 
@@ -75,6 +81,8 @@ require("sex").setup()
 rex.bind("ctrl+b>shift+t", "sex_pick")
 rex.bind("ctrl+b>shift+l", "sex_last")
 rex.bind("ctrl+b>shift+a", "sex_activity")
+rex.bind("ctrl+b>t", "sex_pick_palette")
+rex.bind("ctrl+b>a", "sex_activity_palette")
 ```
 
 Then run `rex config reload`. On rex config load/reload the loader runs
@@ -95,7 +103,7 @@ direction  "horizontal" (default) or "vertical", for host = "split".
 fzf_args   Extra fzf options, appended after the defaults.
 ```
 
-`sex_last` switches through the app and works without Remote Control.
+`sex_last` and the palette actions switch through the app and work without Remote Control.
 `sex_pick` and `sex_activity` do not.
 
 ## Usage
@@ -106,10 +114,11 @@ sex list [-r] [-c] [-z] [-i] [-H] [-j]
     directories (-z); all three by default. -i adds source icons, -H hides
     the session on screen, -j prints JSON.
 
-sex connect [-b] [-c command] name
+sex connect [-b] [-p] [-c command] name
     Switch to the session called name. If it does not exist, create it
     from the matching config entry, zoxide entry, or directory. -b creates
-    the session without switching. -c replaces the startup command.
+    the session without switching. -p prints the session ID. -c replaces
+    the startup command.
 
 sex pick [-- fzf options]
     Select a session with fzf and connect to it.
